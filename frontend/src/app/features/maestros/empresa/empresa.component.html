@@ -1,0 +1,110 @@
+<section class="space-y-7" aria-labelledby="titulo-empresa">
+  <header class="flex flex-col gap-5 border-b border-brand-border pb-6 sm:flex-row sm:items-end sm:justify-between">
+    <div class="space-y-2">
+      <p class="text-xs font-bold uppercase tracking-[0.18em] text-brand-primaryDark">Maestros / Administración</p>
+      <h1 id="titulo-empresa" class="text-3xl font-bold tracking-tight text-brand-dark">Datos de la empresa</h1>
+      <p class="max-w-2xl text-sm text-brand-secondary">Lo que aparece en la guía de remisión, la orden de compra y el Kardex impreso: RUC, razón social y domicilio fiscal.</p>
+    </div>
+  </header>
+
+  @if (empresaQuery.isPending()) {
+    <div class="space-y-3 rounded-2xl border border-brand-border bg-white p-6 shadow-sm"><span class="sr-only">Cargando datos de la empresa</span><div class="h-10 animate-pulse rounded-lg bg-slate-100"></div><div class="h-10 animate-pulse rounded-lg bg-slate-100"></div><div class="h-10 animate-pulse rounded-lg bg-slate-100"></div></div>
+  } @else if (empresaQuery.isError()) {
+    <p class="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700" role="alert">No se pudieron cargar los datos de la empresa. Recarga la página para intentarlo de nuevo.</p>
+  } @else {
+    @if (empresaQuery.data() === null) {
+      <div class="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="status">
+        <svg aria-hidden="true" [lucideIcon]="icons.Building" class="mt-0.5 h-5 w-5 shrink-0"></svg>
+        <p>Todavía no hay datos de la empresa. {{ esAdmin() ? 'Llénalos una vez: los documentos los toman de aquí.' : 'Pídele a un administrador que los llene.' }}</p>
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="guardar()" class="rounded-2xl border border-brand-border bg-white p-6 shadow-sm" novalidate>
+      <fieldset class="grid gap-5 sm:grid-cols-2">
+        <legend class="sr-only">Identificación</legend>
+        <div>
+          <label for="ruc" class="mb-1.5 block text-sm font-medium text-slate-700">RUC *</label>
+          <input id="ruc" formControlName="ruc" inputmode="numeric" maxlength="11" autocomplete="off" [class.border-rose-400]="invalido('ruc')"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2.5 font-mono text-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-orange-100 disabled:bg-slate-50 disabled:text-slate-600">
+          @if (invalido('ruc')) { <p class="mt-1.5 text-xs text-rose-600">Son 11 dígitos y el último debe cuadrar con los demás: revisa que esté bien escrito.</p> }
+        </div>
+        <div>
+          <label for="razon_social" class="mb-1.5 block text-sm font-medium text-slate-700">Razón social *</label>
+          <input id="razon_social" formControlName="razon_social" maxlength="200" [class.border-rose-400]="invalido('razon_social')"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-orange-100 disabled:bg-slate-50 disabled:text-slate-600">
+          @if (invalido('razon_social')) { <p class="mt-1.5 text-xs text-rose-600">Escribe la razón social tal como figura en tu ficha RUC.</p> }
+        </div>
+        <div class="sm:col-span-2">
+          <label for="nombre_comercial" class="mb-1.5 block text-sm font-medium text-slate-700">Nombre comercial</label>
+          <input id="nombre_comercial" formControlName="nombre_comercial" maxlength="200"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-orange-100 disabled:bg-slate-50 disabled:text-slate-600">
+        </div>
+      </fieldset>
+
+      <fieldset class="mt-7 grid gap-5 border-t border-slate-100 pt-6 sm:grid-cols-4">
+        <legend class="mb-1 text-sm font-semibold text-brand-dark">Domicilio fiscal</legend>
+        <div class="sm:col-span-4">
+          <label for="direccion_fiscal" class="mb-1.5 block text-sm font-medium text-slate-700">Dirección</label>
+          <input id="direccion_fiscal" formControlName="direccion_fiscal" maxlength="300"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-orange-100 disabled:bg-slate-50 disabled:text-slate-600">
+        </div>
+        <div>
+          <label for="ubigeo" class="mb-1.5 block text-sm font-medium text-slate-700">Ubigeo</label>
+          <input id="ubigeo" formControlName="ubigeo" inputmode="numeric" maxlength="6" placeholder="150101" [class.border-rose-400]="invalido('ubigeo')"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2.5 font-mono text-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-orange-100 disabled:bg-slate-50 disabled:text-slate-600">
+          @if (invalido('ubigeo')) { <p class="mt-1.5 text-xs text-rose-600">Son 6 dígitos (código INEI del distrito).</p> }
+        </div>
+        <div>
+          <label for="distrito" class="mb-1.5 block text-sm font-medium text-slate-700">Distrito</label>
+          <input id="distrito" formControlName="distrito" maxlength="100"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-orange-100 disabled:bg-slate-50 disabled:text-slate-600">
+        </div>
+        <div>
+          <label for="provincia" class="mb-1.5 block text-sm font-medium text-slate-700">Provincia</label>
+          <input id="provincia" formControlName="provincia" maxlength="100"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-orange-100 disabled:bg-slate-50 disabled:text-slate-600">
+        </div>
+        <div>
+          <label for="departamento" class="mb-1.5 block text-sm font-medium text-slate-700">Departamento</label>
+          <input id="departamento" formControlName="departamento" maxlength="100"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-orange-100 disabled:bg-slate-50 disabled:text-slate-600">
+        </div>
+      </fieldset>
+
+      <fieldset class="mt-7 grid gap-5 border-t border-slate-100 pt-6 sm:grid-cols-3">
+        <legend class="mb-1 text-sm font-semibold text-brand-dark">Contacto</legend>
+        <div>
+          <label for="telefono" class="mb-1.5 block text-sm font-medium text-slate-700">Teléfono</label>
+          <input id="telefono" type="tel" formControlName="telefono" maxlength="30"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-orange-100 disabled:bg-slate-50 disabled:text-slate-600">
+        </div>
+        <div>
+          <label for="correo" class="mb-1.5 block text-sm font-medium text-slate-700">Correo</label>
+          <input id="correo" type="email" formControlName="correo" maxlength="254" [class.border-rose-400]="invalido('correo')"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-orange-100 disabled:bg-slate-50 disabled:text-slate-600">
+          @if (invalido('correo')) { <p class="mt-1.5 text-xs text-rose-600">Revisa el correo (nombre&#64;dominio.com).</p> }
+        </div>
+        <div>
+          <label for="web" class="mb-1.5 block text-sm font-medium text-slate-700">Web</label>
+          <input id="web" formControlName="web" maxlength="200"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-orange-100 disabled:bg-slate-50 disabled:text-slate-600">
+        </div>
+      </fieldset>
+
+      @if (error()) { <p class="mt-6 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700" role="alert">{{ error() }}</p> }
+      @if (guardado()) { <p class="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800" role="status">Datos guardados. Los próximos documentos ya salen con ellos.</p> }
+
+      @if (esAdmin()) {
+        <div class="mt-7 flex justify-end border-t border-slate-100 pt-5">
+          <button type="submit" [disabled]="guardarMutation.isPending()"
+                  class="inline-flex items-center gap-2 rounded-xl bg-brand-primaryDark px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-800 disabled:opacity-50">
+            <svg aria-hidden="true" [lucideIcon]="icons.Save" class="h-4 w-4"></svg>
+            {{ guardarMutation.isPending() ? 'Guardando…' : 'Guardar datos' }}
+          </button>
+        </div>
+      } @else {
+        <p class="mt-7 border-t border-slate-100 pt-5 text-xs text-slate-500">Solo un administrador puede cambiar estos datos.</p>
+      }
+    </form>
+  }
+</section>

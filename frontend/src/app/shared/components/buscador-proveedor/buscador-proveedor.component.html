@@ -1,0 +1,91 @@
+@if (elegido(); as p) {
+  <div
+    class="flex items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2"
+  >
+    <div class="min-w-0">
+      <p class="truncate text-sm font-semibold text-slate-800">
+        {{ p.razon_social }}
+      </p>
+      <p class="font-mono text-xs text-slate-600">
+        {{ p.tipo_documento }} {{ p.numero_documento }}
+        @if (p.nombre_comercial) {
+          · {{ p.nombre_comercial }}
+        }
+      </p>
+    </div>
+    @if (!deshabilitado()) {
+      <button
+        type="button"
+        (click)="quitar()"
+        [attr.aria-label]="'Cambiar proveedor ' + p.razon_social"
+        class="shrink-0 rounded-md p-1 text-slate-500 hover:bg-emerald-100 hover:text-slate-800"
+      >
+        <svg aria-hidden="true" [lucideIcon]="icons.X" class="h-4 w-4"></svg>
+      </button>
+    }
+  </div>
+} @else {
+  <div class="relative" (focusout)="cerrar()">
+    <span
+      class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"
+    >
+      <svg aria-hidden="true" [lucideIcon]="icons.Search" class="h-4 w-4"></svg>
+    </span>
+    <input
+      [id]="inputId()"
+      type="text"
+      role="combobox"
+      autocomplete="off"
+      [value]="texto()"
+      (input)="escribir($any($event.target).value)"
+      (keydown)="tecla($event)"
+      [disabled]="deshabilitado()"
+      [attr.aria-expanded]="abierto()"
+      [attr.aria-controls]="listaId()"
+      aria-autocomplete="list"
+      [attr.aria-activedescendant]="
+        activo() >= 0 ? listaId() + '-' + activo() : null
+      "
+      [class.border-rose-400]="invalido()"
+      placeholder="RUC, DNI o razón social"
+      class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm transition-all focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
+    />
+    @if (abierto() && sugerencias().length > 0) {
+      <div
+        [id]="listaId()"
+        role="listbox"
+        aria-label="Proveedores que coinciden"
+        class="absolute left-0 top-full z-20 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-black/5"
+      >
+        @for (p of sugerencias(); track p.id; let i = $index) {
+          <div
+            [id]="listaId() + '-' + i"
+            role="option"
+            [attr.aria-selected]="i === activo()"
+            (mousedown)="$event.preventDefault(); elegir(p)"
+            class="cursor-pointer px-3 py-2 hover:bg-orange-50"
+            [class.bg-orange-50]="i === activo()"
+          >
+            <span class="block truncate font-medium text-slate-800">{{
+              p.razon_social
+            }}</span>
+            <span class="block font-mono text-xs text-slate-500"
+              >{{ p.tipo_documento }} {{ p.numero_documento }}
+              @if (p.nombre_comercial) {
+                · {{ p.nombre_comercial }}
+              }
+            </span>
+          </div>
+        }
+      </div>
+    } @else if (abierto()) {
+      <p
+        class="absolute left-0 top-full z-20 mt-1 w-full rounded-lg bg-white px-3 py-2 text-xs text-slate-500 shadow-lg ring-1 ring-black/5"
+        role="status"
+      >
+        Ningún proveedor coincide. Si es nuevo, regístralo en Maestros ›
+        Proveedores.
+      </p>
+    }
+  </div>
+}

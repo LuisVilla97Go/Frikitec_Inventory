@@ -1,0 +1,239 @@
+<div class="mx-auto max-w-7xl space-y-6 p-6">
+  <header
+    class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
+  >
+    <div>
+      <h1 class="font-heading text-3xl font-bold text-brand-dark">
+        Toma física
+      </h1>
+      <p class="mt-1 max-w-2xl text-brand-secondary">
+        Concilia varios productos a la vez: agregas los que vas a contar, anotas
+        lo que hay en el almacén y un administrador aprueba los ajustes del
+        Kardex.
+      </p>
+    </div>
+    <button
+      type="button"
+      (click)="abrirNueva()"
+      class="inline-flex shrink-0 items-center gap-2 rounded-md bg-brand-primaryDark px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-800"
+    >
+      <svg aria-hidden="true" [lucideIcon]="icons.Plus" class="h-4 w-4"></svg>
+      Nueva toma física
+    </button>
+  </header>
+
+  <div
+    class="overflow-hidden rounded-xl border border-brand-border bg-white shadow-sm"
+  >
+    <section
+      class="overflow-x-auto"
+      tabindex="0"
+      aria-label="Tabla de tomas físicas"
+    >
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500"
+            >
+              Número
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500"
+            >
+              Almacén
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500"
+            >
+              Estado
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-right text-xs font-semibold uppercase text-gray-500"
+            >
+              Contados
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500"
+            >
+              Creada
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          @if (tomasQuery.isPending()) {
+            <tr>
+              <td colspan="5" class="px-6 py-4">
+                <span class="sr-only">Cargando tomas físicas</span>
+                <div class="h-10 animate-pulse rounded-lg bg-slate-100"></div>
+              </td>
+            </tr>
+          } @else if (tomasQuery.isError()) {
+            <tr>
+              <td
+                colspan="5"
+                class="px-6 py-12 text-center text-sm text-rose-600"
+              >
+                No se pudieron cargar las tomas físicas.
+              </td>
+            </tr>
+          } @else {
+            @for (t of tomasQuery.data()?.data ?? []; track t.id) {
+              <tr class="hover:bg-slate-50">
+                <td class="whitespace-nowrap px-6 py-4 text-sm font-bold">
+                  <a
+                    [routerLink]="['/toma-fisica', t.id]"
+                    href="/toma-fisica/{{ t.id }}"
+                    class="font-mono text-brand-primaryDark hover:underline"
+                    >{{ t.numero }}</a
+                  >
+                </td>
+                <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-700">
+                  {{ t.almacen }}
+                </td>
+                <td class="whitespace-nowrap px-6 py-4 text-sm">
+                  <span
+                    class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium"
+                    [class.bg-amber-50]="t.estado === 'ABIERTO'"
+                    [class.text-amber-800]="t.estado === 'ABIERTO'"
+                    [class.bg-emerald-50]="t.estado === 'CONTABILIZADO'"
+                    [class.text-emerald-800]="t.estado === 'CONTABILIZADO'"
+                    [class.bg-slate-100]="t.estado === 'ANULADO'"
+                    [class.text-slate-600]="t.estado === 'ANULADO'"
+                    >{{ textoEstado[t.estado] }}</span
+                  >
+                </td>
+                <td
+                  class="whitespace-nowrap px-6 py-4 text-right font-mono text-sm tabular-nums text-slate-700"
+                >
+                  {{ t.contados }} / {{ t.productos }}
+                </td>
+                <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
+                  {{ t.creado_en | date: "dd/MM/yyyy HH:mm" }} ·
+                  {{ t.creado_por }}
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td
+                  colspan="5"
+                  class="px-6 py-12 text-center text-sm text-gray-500"
+                >
+                  Todavía no hay tomas físicas. Crea una para contar los
+                  productos de un almacén.
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </section>
+    <app-paginador
+      [pagina]="pagina()"
+      [porPagina]="porPagina()"
+      [total]="tomasQuery.data()?.total ?? 0"
+      etiqueta="tomas físicas"
+      (paginaCambia)="pagina.set($event)"
+      (porPaginaCambia)="cambiarPorPagina($event)"
+    />
+  </div>
+</div>
+
+@if (creando()) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="titulo-nueva-toma"
+  >
+    <div
+      class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
+      aria-hidden="true"
+      (click)="creando.set(false)"
+    ></div>
+    <form
+      (submit)="$event.preventDefault(); crear()"
+      class="relative w-full max-w-md space-y-4 rounded-2xl bg-white p-6 shadow-xl"
+    >
+      <div class="flex items-center justify-between">
+        <h2 id="titulo-nueva-toma" class="text-lg font-bold text-slate-900">
+          Nueva toma física
+        </h2>
+        <button
+          type="button"
+          (click)="creando.set(false)"
+          aria-label="Cerrar"
+          class="rounded-md p-1 text-slate-500 hover:bg-slate-100"
+        >
+          <svg aria-hidden="true" [lucideIcon]="icons.X" class="h-5 w-5"></svg>
+        </button>
+      </div>
+      <div>
+        <label
+          for="toma-almacen"
+          class="mb-1 block text-sm font-medium text-slate-700"
+          >Almacén que vas a contar *</label
+        >
+        <select
+          id="toma-almacen"
+          [value]="almacenId()"
+          (change)="almacenId.set($any($event.target).value)"
+          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+        >
+          <option value="">Elige un almacén</option>
+          @for (a of almacenesQuery.data() ?? []; track a.id) {
+            <option [value]="a.id">{{ a.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label
+          for="toma-observacion"
+          class="mb-1 block text-sm font-medium text-slate-700"
+          >Observación</label
+        >
+        <input
+          id="toma-observacion"
+          [value]="observacion()"
+          (input)="observacion.set($any($event.target).value)"
+          maxlength="300"
+          placeholder="Ej.: conteo de fin de mes, vitrina de accesorios"
+          class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+        />
+      </div>
+      <p class="text-xs text-slate-500">
+        Después agregas los productos. El stock del sistema de cada uno se toma
+        en el momento de agregarlo.
+      </p>
+      @if (error()) {
+        <p
+          class="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700"
+          role="alert"
+        >
+          {{ error() }}
+        </p>
+      }
+      <div class="flex justify-end gap-3 border-t border-slate-100 pt-4">
+        <button
+          type="button"
+          (click)="creando.set(false)"
+          class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          [disabled]="crearMutation.isPending()"
+          class="rounded-lg bg-brand-primaryDark px-4 py-2 text-sm font-medium text-white hover:bg-orange-800 disabled:opacity-50"
+        >
+          Crear y agregar productos
+        </button>
+      </div>
+    </form>
+  </div>
+}

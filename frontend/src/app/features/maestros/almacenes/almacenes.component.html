@@ -1,0 +1,423 @@
+<section class="space-y-7" aria-labelledby="titulo-almacenes">
+  <header
+    class="flex flex-col gap-5 border-b border-brand-border pb-6 sm:flex-row sm:items-end sm:justify-between"
+  >
+    <div class="space-y-2">
+      <p
+        class="text-xs font-bold uppercase tracking-[0.18em] text-brand-primaryDark"
+      >
+        Maestros / Operación
+      </p>
+      <h1
+        id="titulo-almacenes"
+        class="text-3xl font-bold tracking-tight text-brand-dark"
+      >
+        Almacenes
+      </h1>
+      <p class="max-w-2xl text-sm text-brand-secondary">
+        Controla tus tiendas y depósitos, sus existencias y su identificación
+        para el Kardex.
+      </p>
+    </div>
+    @if (esAdmin()) {
+      <button
+        type="button"
+        (click)="abrirNuevo()"
+        class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-brand-primaryDark px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-800"
+      >
+        <svg aria-hidden="true" [lucideIcon]="icons.Plus" class="h-4 w-4"></svg>
+        Nuevo almacén
+      </button>
+    }
+  </header>
+
+  @if (errorEstado()) {
+    <div
+      class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700"
+      role="alert"
+    >
+      {{ errorEstado() }}
+    </div>
+  }
+
+  <div class="grid gap-4 sm:grid-cols-3">
+    <div class="rounded-2xl border border-brand-border bg-white p-5 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        Registrados
+      </p>
+      <p class="mt-2 text-3xl font-bold tabular-nums text-brand-dark">
+        {{
+          almacenesQuery.isPending() || almacenesQuery.isError()
+            ? "—"
+            : resumen().total
+        }}
+      </p>
+      <p class="mt-1 text-xs text-slate-500">Tiendas y depósitos</p>
+    </div>
+    <div class="rounded-2xl border border-brand-border bg-white p-5 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <span
+          class="mr-2 inline-block h-2 w-2 rounded-full bg-emerald-500"
+        ></span
+        >Activos
+      </p>
+      <p class="mt-2 text-3xl font-bold tabular-nums text-brand-dark">
+        {{
+          almacenesQuery.isPending() || almacenesQuery.isError()
+            ? "—"
+            : resumen().activos
+        }}
+      </p>
+      <p class="mt-1 text-xs text-slate-500">Disponibles para movimientos</p>
+    </div>
+    <div class="rounded-2xl border border-brand-border bg-white p-5 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        Unidades actuales
+      </p>
+      <p class="mt-2 text-3xl font-bold tabular-nums text-brand-dark">
+        {{
+          almacenesQuery.isPending() || almacenesQuery.isError()
+            ? "—"
+            : resumen().unidades
+        }}
+      </p>
+      <p class="mt-1 text-xs text-slate-500">Suma de existencias por almacén</p>
+    </div>
+  </div>
+
+  <div
+    class="overflow-hidden rounded-2xl border border-brand-border bg-white shadow-sm"
+  >
+    <div
+      class="flex flex-wrap items-end justify-between gap-3 border-b border-slate-100 p-5"
+    >
+      <div>
+        <h2 class="text-base font-semibold text-brand-dark">
+          Directorio de almacenes
+        </h2>
+        <p class="mt-1 text-sm text-slate-500">
+          El código SUNAT identifica cada establecimiento en el Kardex.
+        </p>
+      </div>
+      @if (!almacenesQuery.isPending() && !almacenesQuery.isError()) {
+        <p class="text-xs font-medium text-slate-500">
+          {{ resumen().total }}
+          {{ resumen().total === 1 ? "registro" : "registros" }}
+        </p>
+      }
+    </div>
+    @if (almacenesQuery.isPending()) {
+      <div class="space-y-3 p-5">
+        <span class="sr-only">Cargando almacenes</span>
+        <div class="h-12 animate-pulse rounded-lg bg-slate-100"></div>
+        <div class="h-12 animate-pulse rounded-lg bg-slate-100"></div>
+      </div>
+    } @else if (almacenesQuery.isError()) {
+      <p class="px-5 py-12 text-center text-sm text-rose-600" role="alert">
+        No se pudieron cargar los almacenes. Recarga la página para intentarlo
+        de nuevo.
+      </p>
+    } @else if (resumen().total === 0) {
+      <div class="px-5 py-14 text-center">
+        <h3 class="text-lg font-semibold text-brand-dark">
+          Todavía no hay almacenes
+        </h3>
+        <p class="mt-2 text-sm text-slate-500">
+          Registra la primera tienda o depósito para organizar el inventario.
+        </p>
+        @if (esAdmin()) {
+          <button
+            type="button"
+            (click)="abrirNuevo()"
+            class="mt-5 rounded-lg border border-brand-primary px-4 py-2 text-sm font-semibold text-brand-primaryDark hover:bg-orange-50"
+          >
+            Registrar primer almacén
+          </button>
+        }
+      </div>
+    } @else {
+      <section
+        class="overflow-x-auto"
+        tabindex="0"
+        aria-label="Tabla de almacenes"
+      >
+        <table class="min-w-full divide-y divide-slate-100">
+          <thead class="bg-slate-50/80">
+            <tr>
+              <th
+                scope="col"
+                class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"
+              >
+                Almacén
+              </th>
+              <th
+                scope="col"
+                class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"
+              >
+                Ubicación
+              </th>
+              <th
+                scope="col"
+                class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"
+              >
+                Código SUNAT
+              </th>
+              <th
+                scope="col"
+                class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500"
+              >
+                Unidades
+              </th>
+              <th
+                scope="col"
+                class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"
+              >
+                Estado
+              </th>
+              @if (esAdmin()) {
+                <th
+                  scope="col"
+                  class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500"
+                >
+                  Acciones
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (almacen of filas(); track almacen.id) {
+              <tr class="transition-colors hover:bg-slate-50/70">
+                <td class="px-5 py-4 text-sm font-semibold text-brand-dark">
+                  {{ almacen.nombre }}
+                </td>
+                <td class="px-5 py-4 text-sm text-slate-600">
+                  {{ almacen.ubicacion || "Sin ubicación" }}
+                </td>
+                <td class="px-5 py-4 text-sm font-mono text-slate-600">
+                  {{ almacen.codigo_establecimiento || "Pendiente" }}
+                </td>
+                <td
+                  class="px-5 py-4 text-right text-sm font-semibold tabular-nums text-brand-dark"
+                >
+                  {{ almacen.stock }}
+                </td>
+                <td class="px-5 py-4 text-sm">
+                  @if (esAdmin()) {
+                    <button
+                      type="button"
+                      (click)="pedirCambioDeEstado(almacen)"
+                      [disabled]="almacen.is_active && almacen.stock !== 0"
+                      [title]="
+                        almacen.is_active && almacen.stock !== 0
+                          ? 'Tiene ' +
+                            almacen.stock +
+                            ' unidades: trasládalas o ajústalas antes de desactivarlo'
+                          : almacen.is_active
+                            ? 'Desactivar'
+                            : 'Reactivar'
+                      "
+                      class="inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-semibold transition-colors disabled:cursor-not-allowed"
+                      [class.bg-emerald-50]="almacen.is_active"
+                      [class.text-emerald-700]="almacen.is_active"
+                      [class.bg-slate-100]="!almacen.is_active"
+                      [class.text-slate-600]="!almacen.is_active"
+                    >
+                      <span
+                        class="h-1.5 w-1.5 rounded-full"
+                        [class.bg-emerald-500]="almacen.is_active"
+                        [class.bg-slate-400]="!almacen.is_active"
+                      ></span
+                      >{{ almacen.is_active ? "Activo" : "Inactivo" }}
+                    </button>
+                  } @else {
+                    <span
+                      class="inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-semibold"
+                      [class.bg-emerald-50]="almacen.is_active"
+                      [class.text-emerald-700]="almacen.is_active"
+                      [class.bg-slate-100]="!almacen.is_active"
+                      [class.text-slate-600]="!almacen.is_active"
+                      >{{ almacen.is_active ? "Activo" : "Inactivo" }}</span
+                    >
+                  }
+                </td>
+                @if (esAdmin()) {
+                  <td class="px-5 py-4 text-right">
+                    <button
+                      type="button"
+                      (click)="abrirEdicion(almacen)"
+                      class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                      aria-label="Editar"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        [lucideIcon]="icons.Edit2"
+                        class="h-3.5 w-3.5"
+                      ></svg
+                      >Editar
+                    </button>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+      @if (resumen().total > 0) {
+        <app-paginador
+          [pagina]="paginaActual()"
+          [porPagina]="porPagina()"
+          [total]="resumen().total"
+          etiqueta="almacenes"
+          (paginaCambia)="pagina.set($event)"
+          (porPaginaCambia)="cambiarPorPagina($event)"
+        />
+      }
+    }
+  </div>
+</section>
+
+@if (modalAbierto()) {
+  <dialog
+    #formularioDialog
+    aria-labelledby="titulo-form-almacen"
+    (cancel)="cancelarModal($event)"
+    class="m-auto max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-xl overflow-hidden rounded-2xl border-0 bg-white p-0 shadow-2xl backdrop:bg-slate-950/60 backdrop:backdrop-blur-sm"
+  >
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+      <header
+        class="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-8"
+      >
+        <div>
+          <p
+            class="text-xs font-bold uppercase tracking-[0.16em] text-brand-primaryDark"
+          >
+            Maestros / Almacenes
+          </p>
+          <h2
+            id="titulo-form-almacen"
+            class="mt-1 text-2xl font-bold text-brand-dark"
+          >
+            {{ editando() ? "Editar almacén" : "Nuevo almacén" }}
+          </h2>
+          <p class="mt-1 text-sm text-slate-500">
+            Identifica la tienda o depósito donde se registrará el inventario.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="cerrarModal()"
+          class="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
+          aria-label="Cerrar"
+        >
+          <svg aria-hidden="true" [lucideIcon]="icons.X" class="h-5 w-5"></svg>
+        </button>
+      </header>
+      <div
+        class="max-h-[calc(100vh-13rem)] space-y-5 overflow-y-auto px-5 py-6 sm:px-8"
+      >
+        <div>
+          <label
+            for="nombre"
+            class="mb-1.5 block text-sm font-medium text-slate-700"
+            >Nombre del almacén *</label
+          ><input
+            id="nombre"
+            type="text"
+            formControlName="nombre"
+            maxlength="100"
+            class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-orange-100"
+            [class.border-rose-400]="invalido('nombre')"
+          />
+          @if (invalido("nombre")) {
+            <p class="mt-1 text-xs text-rose-600">El nombre es obligatorio.</p>
+          }
+        </div>
+        <div>
+          <label
+            for="ubicacion"
+            class="mb-1.5 block text-sm font-medium text-slate-700"
+            >Ubicación</label
+          ><input
+            id="ubicacion"
+            type="text"
+            formControlName="ubicacion"
+            maxlength="200"
+            placeholder="Dirección o referencia"
+            class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-orange-100"
+          />
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <label
+            for="codigo_establecimiento"
+            class="mb-1.5 block text-sm font-medium text-slate-700"
+            >Código de establecimiento SUNAT</label
+          ><input
+            id="codigo_establecimiento"
+            type="text"
+            formControlName="codigo_establecimiento"
+            maxlength="4"
+            inputmode="numeric"
+            placeholder="0000"
+            class="w-40 rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-orange-100"
+            [class.border-rose-400]="invalido('codigo_establecimiento')"
+          />
+          @if (invalido("codigo_establecimiento")) {
+            <p class="mt-2 text-xs text-rose-600">
+              Son 4 dígitos, como en tu ficha RUC (0000 es el domicilio fiscal).
+            </p>
+          } @else {
+            <p class="mt-2 text-xs leading-5 text-slate-500">
+              Opcional. Aparece en tu ficha RUC, en «establecimientos anexos».
+            </p>
+          }
+        </div>
+        @if (errorFormulario()) {
+          <div
+            class="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700"
+            role="alert"
+          >
+            {{ errorFormulario() }}
+          </div>
+        }
+      </div>
+      <footer
+        class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-5 py-4 sm:px-8"
+      >
+        <p class="text-xs text-slate-500">* Campos obligatorios</p>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            (click)="cerrarModal()"
+            class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700"
+          >
+            Cancelar</button
+          ><button
+            type="submit"
+            [disabled]="guardarMutation.isPending()"
+            class="inline-flex items-center gap-2 rounded-lg bg-brand-primaryDark px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-800 disabled:opacity-50"
+          >
+            <svg
+              aria-hidden="true"
+              [lucideIcon]="icons.Save"
+              class="h-4 w-4"
+            ></svg
+            >{{ editando() ? "Actualizar" : "Guardar" }}
+          </button>
+        </div>
+      </footer>
+    </form>
+  </dialog>
+}
+
+@if (aCambiar(); as almacen) {
+  <app-dialogo-confirmacion
+    [titulo]="
+      almacen.is_active ? '¿Desactivar almacén?' : '¿Reactivar almacén?'
+    "
+    [mensaje]="mensajeCambio(almacen)"
+    [textoConfirmar]="almacen.is_active ? 'Desactivar' : 'Reactivar'"
+    [ocupado]="estadoMutation.isPending()"
+    (confirmar)="estadoMutation.mutate(almacen)"
+    (cancelar)="aCambiar.set(null)"
+  />
+}

@@ -1,0 +1,24 @@
+<div class="fixed inset-0 z-[9999] flex items-center justify-center p-4" role="dialog" aria-modal="true" [attr.aria-label]="titulo()">
+  <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" aria-hidden="true" (click)="cancelar.emit()"></div>
+  <div class="relative w-full max-w-sm bg-white rounded-2xl shadow-xl border border-slate-200 p-6">
+    <div class="flex items-start gap-3">
+      <div class="w-10 h-10 shrink-0 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center">
+        <svg aria-hidden="true" [lucideIcon]="AlertTriangle" class="w-5 h-5"></svg>
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-slate-900">{{ titulo() }}</h3>
+        <p class="mt-1 text-sm text-slate-600">{{ mensaje() }}</p>
+      </div>
+    </div>
+    <div class="mt-6 flex justify-end gap-2">
+      <button type="button" (click)="cancelar.emit()" [disabled]="ocupado()"
+              class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50">
+        Cancelar
+      </button>
+      <button type="button" (click)="confirmar.emit()" [disabled]="ocupado()"
+              class="px-4 py-2 text-sm font-medium text-white bg-rose-600 rounded-lg hover:bg-rose-700 disabled:opacity-50">
+        {{ textoConfirmar() }}
+      </button>
+    </div>
+  </div>
+</div>

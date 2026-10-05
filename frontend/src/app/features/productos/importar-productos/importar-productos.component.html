@@ -1,0 +1,247 @@
+<div
+  class="fixed inset-0 z-50 overflow-y-auto"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="titulo-importar"
+>
+  <div class="flex items-center justify-center min-h-screen px-4 py-8">
+    <div
+      class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
+      aria-hidden="true"
+      (click)="salir()"
+    ></div>
+
+    <div
+      class="relative w-full max-w-3xl bg-white rounded-2xl shadow-xl border border-slate-200 p-6"
+    >
+      <div class="flex items-start justify-between gap-3 mb-4">
+        <div>
+          <h3 id="titulo-importar" class="text-lg font-bold text-slate-900">
+            Importar productos desde Excel
+          </h3>
+          <p class="mt-1 text-sm text-slate-600">
+            Crea los productos nuevos y actualiza los que ya existen, por SKU.
+            El costo y el stock de un producto con movimientos no cambian: los
+            lleva el Kardex.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="salir()"
+          class="text-slate-400 hover:text-slate-600"
+          aria-label="Cerrar"
+        >
+          <svg aria-hidden="true" [lucideIcon]="icons.X" class="w-5 h-5"></svg>
+        </button>
+      </div>
+
+      @if (aplicado(); as hecho) {
+        <div
+          class="rounded-lg bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-800 flex gap-3"
+          role="status"
+        >
+          <svg
+            aria-hidden="true"
+            [lucideIcon]="icons.CircleCheck"
+            class="w-5 h-5 shrink-0"
+          ></svg>
+          <p>
+            Carga aplicada: {{ hecho.nuevos }} nuevos y
+            {{ hecho.actualizados }} actualizados.
+          </p>
+        </div>
+      } @else {
+        <ol class="space-y-4 text-sm text-slate-700">
+          <li class="flex flex-wrap items-center gap-3">
+            <span
+              >1. Usa la plantilla, o tu Excel con las mismas columnas.</span
+            >
+            <button
+              type="button"
+              (click)="plantillaMutation.mutate()"
+              [disabled]="ocupado()"
+              class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+            >
+              <svg
+                aria-hidden="true"
+                [lucideIcon]="icons.Download"
+                class="w-4 h-4 mr-2"
+              ></svg>
+              Descargar plantilla
+            </button>
+          </li>
+          <li>
+            <label for="archivo-importar" class="block mb-1"
+              >2. Elige el archivo (.xlsx, hasta 1 MB y 2000 filas).</label
+            >
+            <input
+              id="archivo-importar"
+              type="file"
+              (change)="elegir($event)"
+              [disabled]="ocupado()"
+              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              class="block w-full text-sm text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200"
+            />
+          </li>
+          <li>
+            3. Revísalo: nada se guarda hasta que pulses Aplicar, y con un solo
+            error no se aplica nada.
+          </li>
+        </ol>
+      }
+
+      @if (error()) {
+        <div
+          class="mt-4 rounded-lg bg-rose-50 border border-rose-200 p-3 text-sm text-rose-700"
+          role="alert"
+        >
+          {{ error() }}
+        </div>
+      }
+
+      @if (revision(); as r) {
+        @if (!aplicado()) {
+          <dl class="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+            <div class="rounded-lg border border-slate-200 p-3">
+              <dt class="text-xs text-slate-500">Nuevos</dt>
+              <dd class="text-xl font-bold text-slate-900">{{ r.nuevos }}</dd>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-3">
+              <dt class="text-xs text-slate-500">Actualizados</dt>
+              <dd class="text-xl font-bold text-slate-900">
+                {{ r.actualizados }}
+              </dd>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-3">
+              <dt class="text-xs text-slate-500">Sin cambios</dt>
+              <dd class="text-xl font-bold text-slate-900">
+                {{ r.sin_cambios }}
+              </dd>
+            </div>
+            <div
+              class="rounded-lg border p-3"
+              [class]="
+                r.total_errores
+                  ? 'border-rose-300 bg-rose-50'
+                  : 'border-slate-200'
+              "
+            >
+              <dt class="text-xs text-slate-500">Errores</dt>
+              <dd
+                class="text-xl font-bold"
+                [class]="r.total_errores ? 'text-rose-700' : 'text-slate-900'"
+              >
+                {{ r.total_errores }}
+              </dd>
+            </div>
+          </dl>
+        }
+
+        @for (grupo of incidencias(); track grupo.titulo) {
+          @if (grupo.filas.length) {
+            <section class="mt-5" [attr.aria-label]="grupo.titulo">
+              <h4
+                class="text-sm font-semibold flex items-center gap-2"
+                [class]="grupo.color"
+              >
+                <svg
+                  aria-hidden="true"
+                  [lucideIcon]="icons.TriangleAlert"
+                  class="w-4 h-4"
+                ></svg>
+                {{ grupo.titulo }}
+                @if (grupo.total > grupo.filas.length) {
+                  <span class="font-normal text-slate-500"
+                    >(se muestran {{ grupo.filas.length }} de
+                    {{ grupo.total }})</span
+                  >
+                }
+              </h4>
+              <div
+                class="mt-2 max-h-64 overflow-y-auto border border-slate-200 rounded-lg"
+              >
+                <table class="min-w-full text-sm">
+                  <thead class="bg-slate-50 sticky top-0">
+                    <tr>
+                      <th
+                        class="px-3 py-2 text-left text-xs font-semibold text-slate-500"
+                      >
+                        Fila
+                      </th>
+                      <th
+                        class="px-3 py-2 text-left text-xs font-semibold text-slate-500"
+                      >
+                        Columna
+                      </th>
+                      <th
+                        class="px-3 py-2 text-left text-xs font-semibold text-slate-500"
+                      >
+                        Qué pasa
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100">
+                    @for (i of grupo.filas; track $index) {
+                      <tr>
+                        <td class="px-3 py-2 font-mono text-slate-700">
+                          {{ i.fila ?? "—" }}
+                        </td>
+                        <td class="px-3 py-2 text-slate-700">
+                          {{ i.columna ?? "—" }}
+                        </td>
+                        <td class="px-3 py-2 text-slate-600">
+                          {{ i.mensaje }}
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          }
+        }
+      }
+
+      <div class="mt-6 flex justify-end gap-3">
+        @if (aplicado()) {
+          <button
+            type="button"
+            (click)="salir()"
+            class="px-4 py-2 text-sm font-medium text-white bg-brand-primaryDark rounded-lg hover:bg-orange-800"
+          >
+            Cerrar
+          </button>
+        } @else {
+          <button
+            type="button"
+            (click)="salir()"
+            class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            (click)="revisar()"
+            [disabled]="!archivo() || ocupado()"
+            class="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+          >
+            <svg
+              aria-hidden="true"
+              [lucideIcon]="icons.FileSpreadsheet"
+              class="w-4 h-4 mr-2"
+            ></svg>
+            {{ revisarMutation.isPending() ? "Revisando…" : "Revisar" }}
+          </button>
+          <button
+            type="button"
+            (click)="aplicar()"
+            [disabled]="!puedeAplicar()"
+            class="px-4 py-2 text-sm font-medium text-white bg-brand-primaryDark rounded-lg hover:bg-orange-800 disabled:opacity-50"
+          >
+            {{ aplicarMutation.isPending() ? "Aplicando…" : "Aplicar" }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+</div>
