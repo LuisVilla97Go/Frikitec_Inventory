@@ -1,0 +1,102 @@
+@if (productoId()) {
+  <div
+    class="flex min-h-11 items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2"
+  >
+    <span class="min-w-0 truncate text-sm font-medium text-slate-800"
+      >{{ elegido()?.id === productoId() ? elegido()?.sku : "" }}
+      {{
+        elegido()?.id === productoId() ? elegido()?.name : nombreInicial()
+      }}</span
+    >
+    <button
+      type="button"
+      (click)="quitar()"
+      class="shrink-0 text-xs font-semibold text-brand-primaryDark hover:underline"
+      [attr.aria-label]="
+        'Cambiar producto ' +
+        (elegido()?.id === productoId() ? elegido()?.name : nombreInicial())
+      "
+    >
+      Cambiar
+    </button>
+  </div>
+} @else {
+  <div class="relative" (focusout)="cerrar()">
+    <input
+      [id]="inputId()"
+      type="search"
+      role="combobox"
+      autocomplete="off"
+      aria-autocomplete="list"
+      [attr.aria-expanded]="abierto()"
+      [attr.aria-controls]="inputId() + '-lista'"
+      [attr.aria-activedescendant]="
+        abierto() && (productosQuery.data()?.data?.length ?? 0)
+          ? inputId() + '-opcion-' + activo()
+          : null
+      "
+      [value]="texto()"
+      (input)="escribir($any($event.target).value)"
+      (keydown)="tecla($event)"
+      placeholder="SKU, nombre, marca o código de barras"
+      class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+    />
+    @if (abierto()) {
+      @if (productosQuery.isFetching() || busqueda() !== texto().trim()) {
+        <p
+          class="absolute left-0 top-full z-30 mt-1 w-full rounded-lg bg-white px-3 py-2 text-xs text-slate-600 shadow-lg"
+          role="status"
+        >
+          Buscando productos…
+        </p>
+      } @else if (productosQuery.data()?.data?.length) {
+        <div
+          #lista
+          [id]="inputId() + '-lista'"
+          role="listbox"
+          aria-label="Productos que coinciden"
+          class="absolute left-0 top-full z-30 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 shadow-lg ring-1 ring-slate-200"
+        >
+          @for (
+            producto of productosQuery.data()?.data ?? [];
+            track producto.id;
+            let i = $index
+          ) {
+            <div
+              [id]="inputId() + '-opcion-' + i"
+              role="option"
+              [attr.aria-selected]="activo() === i"
+              (mousedown)="$event.preventDefault(); elegir(producto)"
+              [class.bg-orange-50]="activo() === i"
+              class="cursor-pointer px-3 py-2 text-sm hover:bg-orange-50"
+            >
+              <span class="block font-medium text-slate-800">{{
+                producto.name
+              }}</span>
+              <span class="block text-xs text-slate-500"
+                >{{ producto.sku }} · {{ producto.brand }}
+                @if (producto.barcode) {
+                  · {{ producto.barcode }}
+                }
+              </span>
+            </div>
+          }
+        </div>
+      } @else if (productosQuery.isError()) {
+        <p
+          class="absolute left-0 top-full z-30 mt-1 w-full rounded-lg bg-white px-3 py-2 text-xs text-rose-700 shadow-lg"
+          role="alert"
+        >
+          No se pudo buscar. Inténtalo de nuevo.
+        </p>
+      } @else {
+        <p
+          class="absolute left-0 top-full z-30 mt-1 w-full rounded-lg bg-white px-3 py-2 text-xs text-slate-600 shadow-lg"
+          role="status"
+        >
+          No hay productos que coincidan.
+        </p>
+      }
+    }
+  </div>
+}

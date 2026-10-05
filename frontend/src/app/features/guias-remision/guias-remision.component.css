@@ -1,0 +1,40 @@
+@page {
+  size: A4;
+  margin: 12mm 15mm 14mm;
+}
+
+.sheet-a4 {
+  background: white;
+  width: 210mm;
+  min-height: 297mm;
+  margin: 20px auto;
+  padding: 15mm 20mm;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+@media print {
+  :host {
+    display: block;
+    background-color: white;
+  }
+
+  .sheet-a4 {
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    width: 100%;
+    min-height: 0;
+  }
+  .no-print {
+    display: none;
+  }
+  .print-only {
+    display: block;
+  }
+  .page-break {
+    page-break-after: always;
+  }
+  tr {
+    break-inside: avoid;
+  }
+}

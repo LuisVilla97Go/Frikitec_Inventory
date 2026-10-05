@@ -1,0 +1,52 @@
+<div
+  class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-4 py-3 text-sm text-slate-600 sm:px-6"
+>
+  <span
+    >{{ total() }} {{ etiqueta() }} · página {{ pagina() }} de
+    {{ totalPaginas() }}</span
+  >
+  <div class="flex items-center gap-3">
+    <label class="flex items-center gap-2 text-xs text-slate-500">
+      Filas por página
+      <select
+        [value]="porPagina()"
+        (change)="elegirTamano($any($event.target).value)"
+        class="rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm text-slate-700 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-orange-100"
+      >
+        @for (tamano of tamanos; track tamano) {
+          <option [value]="tamano" [selected]="tamano === porPagina()">
+            {{ tamano }}
+          </option>
+        }
+      </select>
+    </label>
+    <div class="flex gap-2">
+      <button
+        type="button"
+        (click)="ir(pagina() - 1)"
+        [disabled]="pagina() <= 1"
+        aria-label="Página anterior"
+        class="rounded-lg border border-gray-300 p-1.5 hover:bg-gray-50 disabled:opacity-40"
+      >
+        <svg
+          aria-hidden="true"
+          [lucideIcon]="ChevronLeft"
+          class="h-4 w-4"
+        ></svg>
+      </button>
+      <button
+        type="button"
+        (click)="ir(pagina() + 1)"
+        [disabled]="pagina() >= totalPaginas()"
+        aria-label="Página siguiente"
+        class="rounded-lg border border-gray-300 p-1.5 hover:bg-gray-50 disabled:opacity-40"
+      >
+        <svg
+          aria-hidden="true"
+          [lucideIcon]="ChevronRight"
+          class="h-4 w-4"
+        ></svg>
+      </button>
+    </div>
+  </div>
+</div>

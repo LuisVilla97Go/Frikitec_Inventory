@@ -1,0 +1,500 @@
+<section class="space-y-7" aria-labelledby="titulo-proveedores">
+  <header
+    class="flex flex-col gap-5 border-b border-brand-border pb-6 sm:flex-row sm:items-end sm:justify-between"
+  >
+    <div class="space-y-2">
+      <p
+        class="text-xs font-bold uppercase tracking-[0.18em] text-brand-primaryDark"
+      >
+        Maestros / Abastecimiento
+      </p>
+      <h1
+        id="titulo-proveedores"
+        class="text-3xl font-bold tracking-tight text-brand-dark"
+      >
+        Proveedores
+      </h1>
+      <p class="max-w-2xl text-sm text-brand-secondary">
+        Gestiona quién abastece tus compras y conserva su identificación y datos
+        de contacto.
+      </p>
+    </div>
+    @if (esAdmin()) {
+      <button
+        type="button"
+        (click)="nuevo()"
+        class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-brand-primaryDark px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-800"
+      >
+        <svg aria-hidden="true" [lucideIcon]="icons.Plus" class="h-4 w-4"></svg>
+        Nuevo proveedor
+      </button>
+    }
+  </header>
+
+  @if (errorEstado()) {
+    <div
+      class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700"
+      role="alert"
+    >
+      {{ errorEstado() }}
+    </div>
+  }
+
+  <div class="grid gap-4 sm:grid-cols-3">
+    <div class="rounded-2xl border border-brand-border bg-white p-5 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        Registrados
+      </p>
+      <p class="mt-2 text-3xl font-bold tabular-nums text-brand-dark">
+        {{ query.isPending() || query.isError() ? "—" : resumen().total }}
+      </p>
+      <p class="mt-1 text-xs text-slate-500">En el directorio</p>
+    </div>
+    <div class="rounded-2xl border border-brand-border bg-white p-5 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <span
+          class="mr-2 inline-block h-2 w-2 rounded-full bg-emerald-500"
+        ></span
+        >Activos
+      </p>
+      <p class="mt-2 text-3xl font-bold tabular-nums text-brand-dark">
+        {{ query.isPending() || query.isError() ? "—" : resumen().activos }}
+      </p>
+      <p class="mt-1 text-xs text-slate-500">Disponibles para nuevas compras</p>
+    </div>
+    <div class="rounded-2xl border border-brand-border bg-white p-5 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <span class="mr-2 inline-block h-2 w-2 rounded-full bg-slate-400"></span
+        >Inactivos
+      </p>
+      <p class="mt-2 text-3xl font-bold tabular-nums text-brand-dark">
+        {{ query.isPending() || query.isError() ? "—" : resumen().inactivos }}
+      </p>
+      <p class="mt-1 text-xs text-slate-500">Conservados para el historial</p>
+    </div>
+  </div>
+
+  <div
+    class="overflow-hidden rounded-2xl border border-brand-border bg-white shadow-sm"
+  >
+    <div
+      class="flex flex-col gap-4 border-b border-slate-100 p-5 lg:flex-row lg:items-end lg:justify-between"
+    >
+      <div>
+        <h2 class="text-base font-semibold text-brand-dark">
+          Directorio de proveedores
+        </h2>
+        <p class="mt-1 text-sm text-slate-500">
+          RUC y DNI se validan por formato; la vigencia se confirma en SUNAT.
+        </p>
+      </div>
+      <label class="relative block w-full lg:max-w-sm">
+        <span class="mb-1.5 block text-xs font-semibold text-slate-600"
+          >Buscar proveedor</span
+        >
+        <svg
+          aria-hidden="true"
+          [lucideIcon]="icons.Search"
+          class="pointer-events-none absolute bottom-2.5 left-3 h-4 w-4 text-slate-400"
+        ></svg>
+        <input
+          type="search"
+          [value]="busqueda()"
+          (input)="buscar($any($event.target).value)"
+          placeholder="Nombre, RUC o DNI"
+          class="w-full rounded-lg border border-slate-300 py-2.5 pl-10 pr-3 text-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-orange-100"
+        />
+      </label>
+    </div>
+    <fieldset
+      class="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-3"
+    >
+      <legend class="sr-only">Filtrar proveedores por estado</legend>
+      <button
+        type="button"
+        (click)="filtrarEstado('todos')"
+        [attr.aria-pressed]="estadoFiltro() === 'todos'"
+        class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+        [class.bg-orange-50]="estadoFiltro() === 'todos'"
+        [class.text-brand-primaryDark]="estadoFiltro() === 'todos'"
+        [class.text-slate-600]="estadoFiltro() !== 'todos'"
+      >
+        Todos · {{ resumen().total }}
+      </button>
+      <button
+        type="button"
+        (click)="filtrarEstado('activos')"
+        [attr.aria-pressed]="estadoFiltro() === 'activos'"
+        class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+        [class.bg-orange-50]="estadoFiltro() === 'activos'"
+        [class.text-brand-primaryDark]="estadoFiltro() === 'activos'"
+        [class.text-slate-600]="estadoFiltro() !== 'activos'"
+      >
+        Activos · {{ resumen().activos }}
+      </button>
+      <button
+        type="button"
+        (click)="filtrarEstado('inactivos')"
+        [attr.aria-pressed]="estadoFiltro() === 'inactivos'"
+        class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+        [class.bg-orange-50]="estadoFiltro() === 'inactivos'"
+        [class.text-brand-primaryDark]="estadoFiltro() === 'inactivos'"
+        [class.text-slate-600]="estadoFiltro() !== 'inactivos'"
+      >
+        Inactivos · {{ resumen().inactivos }}
+      </button>
+      @if (!query.isPending() && resumen().total > 0) {
+        <span class="ml-auto text-xs text-slate-500"
+          >{{ filtrados().length }} visibles con los filtros</span
+        >
+      }
+    </fieldset>
+
+    @if (query.isPending()) {
+      <div class="space-y-3 p-5">
+        <span class="sr-only">Cargando proveedores</span>
+        <div class="h-12 animate-pulse rounded-lg bg-slate-100"></div>
+        <div class="h-12 animate-pulse rounded-lg bg-slate-100"></div>
+        <div class="h-12 animate-pulse rounded-lg bg-slate-100"></div>
+      </div>
+    } @else if (query.isError()) {
+      <p class="px-5 py-12 text-center text-sm text-rose-600" role="alert">
+        No se pudieron cargar los proveedores. Recarga la página para intentarlo
+        de nuevo.
+      </p>
+    } @else if (resumen().total === 0) {
+      <div class="flex flex-col items-center px-5 py-14 text-center">
+        <div
+          class="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 text-brand-primaryDark"
+        >
+          <svg
+            aria-hidden="true"
+            [lucideIcon]="icons.Plus"
+            class="h-6 w-6"
+          ></svg>
+        </div>
+        <h3 class="mt-4 text-lg font-semibold text-brand-dark">
+          Todavía no hay proveedores
+        </h3>
+        <p class="mt-2 max-w-md text-sm leading-6 text-slate-500">
+          Registra un proveedor real para poder seleccionarlo en las órdenes de
+          compra. No se ha guardado ningún ejemplo.
+        </p>
+        @if (esAdmin()) {
+          <button
+            type="button"
+            (click)="nuevo()"
+            class="mt-5 rounded-lg border border-brand-primary px-4 py-2 text-sm font-semibold text-brand-primaryDark hover:bg-orange-50"
+          >
+            Registrar primer proveedor
+          </button>
+        }
+      </div>
+    } @else if (filtrados().length === 0) {
+      <div class="px-5 py-14 text-center">
+        <p class="font-semibold text-brand-dark">
+          No hay proveedores que coincidan
+        </p>
+        <p class="mt-1 text-sm text-slate-500">
+          Prueba otro nombre, documento o estado.
+        </p>
+      </div>
+    } @else {
+      <section
+        class="overflow-x-auto"
+        tabindex="0"
+        aria-label="Tabla de proveedores"
+      >
+        <table class="min-w-full divide-y divide-slate-100">
+          <thead class="bg-slate-50/80">
+            <tr>
+              <th
+                scope="col"
+                class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"
+              >
+                Proveedor
+              </th>
+              <th
+                scope="col"
+                class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"
+              >
+                Documento
+              </th>
+              <th
+                scope="col"
+                class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"
+              >
+                Contacto
+              </th>
+              <th
+                scope="col"
+                class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"
+              >
+                Estado
+              </th>
+              @if (esAdmin()) {
+                <th
+                  scope="col"
+                  class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500"
+                >
+                  Acciones
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (p of filas(); track p.id) {
+              <tr class="transition-colors hover:bg-slate-50/70">
+                <td class="px-5 py-4 text-sm">
+                  <span class="font-semibold text-brand-dark">{{
+                    p.razon_social
+                  }}</span>
+                  @if (p.nombre_comercial) {
+                    <span class="mt-0.5 block text-xs text-slate-500">{{
+                      p.nombre_comercial
+                    }}</span>
+                  }
+                </td>
+                <td class="px-5 py-4 text-sm">
+                  <span
+                    class="mr-2 rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600"
+                    >{{ p.tipo_documento }}</span
+                  ><span class="font-mono text-slate-700">{{
+                    p.numero_documento
+                  }}</span>
+                </td>
+                <td class="px-5 py-4 text-sm text-slate-600">
+                  {{ p.contacto || p.correo || p.telefono || "Sin contacto" }}
+                  @if (p.contacto && p.correo) {
+                    <span class="mt-0.5 block text-xs text-slate-400">{{
+                      p.correo
+                    }}</span>
+                  }
+                </td>
+                <td class="px-5 py-4 text-sm">
+                  <span
+                    class="inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-semibold"
+                    [class.bg-emerald-50]="p.is_active"
+                    [class.text-emerald-700]="p.is_active"
+                    [class.bg-slate-100]="!p.is_active"
+                    [class.text-slate-600]="!p.is_active"
+                    ><span
+                      class="h-1.5 w-1.5 rounded-full"
+                      [class.bg-emerald-500]="p.is_active"
+                      [class.bg-slate-400]="!p.is_active"
+                    ></span
+                    >{{ p.is_active ? "Activo" : "Inactivo" }}</span
+                  >
+                </td>
+                @if (esAdmin()) {
+                  <td class="px-5 py-4 text-right text-sm">
+                    <div class="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        (click)="editar(p)"
+                        aria-label="Editar proveedor"
+                        class="rounded-lg border border-slate-200 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50"
+                      >
+                        Editar</button
+                      ><button
+                        type="button"
+                        (click)="objetivoEstado.set(p)"
+                        class="rounded-lg px-3 py-1.5 font-medium text-slate-600 hover:bg-slate-100"
+                      >
+                        {{ p.is_active ? "Desactivar" : "Reactivar" }}
+                      </button>
+                    </div>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+      @if (filtrados().length > 0) {
+        <app-paginador
+          [pagina]="paginaActual()"
+          [porPagina]="porPagina()"
+          [total]="filtrados().length"
+          etiqueta="proveedores"
+          (paginaCambia)="pagina.set($event)"
+          (porPaginaCambia)="cambiarPorPagina($event)"
+        />
+      }
+    }
+  </div>
+</section>
+
+@if (abierto()) {
+  <dialog
+    #formularioDialog
+    aria-labelledby="titulo-proveedor-form"
+    (cancel)="cancelarModal($event)"
+    class="m-auto max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-2xl overflow-hidden rounded-2xl border-0 bg-white p-0 shadow-2xl backdrop:bg-slate-950/60 backdrop:backdrop-blur-sm"
+  >
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+      <header
+        class="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-8"
+      >
+        <div>
+          <p
+            class="text-xs font-bold uppercase tracking-[0.16em] text-brand-primaryDark"
+          >
+            Maestros / Proveedores
+          </p>
+          <h2
+            id="titulo-proveedor-form"
+            class="mt-1 text-2xl font-bold text-brand-dark"
+          >
+            {{ editando() ? "Editar proveedor" : "Nuevo proveedor" }}
+          </h2>
+          <p class="mt-1 text-sm text-slate-500">
+            Identificación y contacto para tus órdenes de compra.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="cerrarModal()"
+          aria-label="Cerrar"
+          class="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
+        >
+          <svg aria-hidden="true" [lucideIcon]="icons.X" class="h-5 w-5"></svg>
+        </button>
+      </header>
+      <div
+        class="max-h-[calc(100vh-13rem)] space-y-6 overflow-y-auto px-5 py-6 sm:px-8"
+      >
+        <section aria-labelledby="identificacion-proveedor">
+          <h3
+            id="identificacion-proveedor"
+            class="text-sm font-bold uppercase tracking-wide text-brand-dark"
+          >
+            Identificación
+          </h3>
+          <p class="mt-1 text-xs text-slate-500">
+            El documento identifica al proveedor y no se cambia después de
+            crearlo.
+          </p>
+          <div class="mt-4 grid gap-4 sm:grid-cols-3">
+            <label class="text-sm font-medium text-slate-700"
+              >Tipo de documento *<select
+                formControlName="tipo_documento"
+                class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal"
+              >
+                <option value="RUC">RUC</option>
+                <option value="DNI">DNI</option>
+              </select></label
+            >
+            <label class="text-sm font-medium text-slate-700 sm:col-span-2"
+              >Número de documento *<input
+                formControlName="numero_documento"
+                inputmode="numeric"
+                class="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-mono text-sm font-normal"
+                [class.border-rose-500]="campoInvalido('numero_documento')"
+            /></label>
+          </div>
+          @if (campoInvalido("numero_documento")) {
+            <p class="mt-2 text-xs text-rose-600">
+              RUC: 11 dígitos; DNI: 8 dígitos.
+            </p>
+          }
+          <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <label class="text-sm font-medium text-slate-700"
+              >Razón social *<input
+                formControlName="razon_social"
+                maxlength="200"
+                class="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-normal"
+            /></label>
+            <label class="text-sm font-medium text-slate-700"
+              >Nombre comercial<input
+                formControlName="nombre_comercial"
+                maxlength="200"
+                class="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-normal"
+            /></label>
+          </div>
+        </section>
+        <section
+          class="border-t border-slate-100 pt-6"
+          aria-labelledby="contacto-proveedor"
+        >
+          <h3
+            id="contacto-proveedor"
+            class="text-sm font-bold uppercase tracking-wide text-brand-dark"
+          >
+            Contacto
+          </h3>
+          <p class="mt-1 text-xs text-slate-500">
+            Estos datos son opcionales y ayudan a coordinar cada pedido.
+          </p>
+          <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <label class="text-sm font-medium text-slate-700"
+              >Persona de contacto<input
+                formControlName="contacto"
+                maxlength="150"
+                class="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-normal" /></label
+            ><label class="text-sm font-medium text-slate-700"
+              >Teléfono<input
+                formControlName="telefono"
+                maxlength="30"
+                class="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-normal"
+            /></label>
+          </div>
+          <label class="mt-4 block text-sm font-medium text-slate-700"
+            >Correo electrónico<input
+              formControlName="correo"
+              maxlength="254"
+              type="email"
+              class="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-normal"
+          /></label>
+        </section>
+        @if (error()) {
+          <div
+            class="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700"
+            role="alert"
+          >
+            {{ error() }}
+          </div>
+        }
+      </div>
+      <footer
+        class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-5 py-4 sm:px-8"
+      >
+        <p class="text-xs text-slate-500">* Campos obligatorios</p>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            (click)="cerrarModal()"
+            class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700"
+          >
+            Cancelar</button
+          ><button
+            type="submit"
+            [disabled]="guardarMutation.isPending()"
+            class="inline-flex items-center gap-2 rounded-lg bg-brand-primaryDark px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-800 disabled:opacity-50"
+          >
+            <svg
+              aria-hidden="true"
+              [lucideIcon]="icons.Save"
+              class="h-4 w-4"
+            ></svg
+            >Guardar
+          </button>
+        </div>
+      </footer>
+    </form>
+  </dialog>
+}
+@if (objetivoEstado(); as p) {
+  <app-dialogo-confirmacion
+    [titulo]="p.is_active ? '¿Desactivar proveedor?' : '¿Reactivar proveedor?'"
+    [mensaje]="
+      p.is_active
+        ? 'Dejará de aparecer en las nuevas compras; el historial se conserva.'
+        : 'Volverá a aparecer en las nuevas compras.'
+    "
+    [textoConfirmar]="p.is_active ? 'Desactivar' : 'Reactivar'"
+    [ocupado]="estadoMutation.isPending()"
+    (confirmar)="estadoMutation.mutate(p)"
+    (cancelar)="objetivoEstado.set(null)"
+  />
+}

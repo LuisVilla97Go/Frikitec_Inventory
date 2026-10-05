@@ -1,0 +1,30 @@
+<div class="fixed inset-0 z-[9999] flex items-center justify-center p-4" role="dialog" aria-modal="true" [attr.aria-label]="'Código de barras ' + codigo()">
+  <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" aria-hidden="true" (click)="cerrar.emit()"></div>
+  <div class="relative w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 p-6">
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <h3 class="text-base font-bold text-slate-900">Código de barras</h3>
+        @if (nombre()) {
+          <p class="mt-1 text-sm text-slate-600">{{ nombre() }}</p>
+        }
+        @if (sku()) {
+          <p class="text-xs font-mono text-slate-400">{{ sku() }}</p>
+        }
+      </div>
+      <button type="button" (click)="cerrar.emit()" class="text-slate-400 hover:text-slate-600" aria-label="Cerrar">
+        <svg aria-hidden="true" [lucideIcon]="X" class="w-5 h-5"></svg>
+      </button>
+    </div>
+
+    <div class="mt-5 flex justify-center rounded-xl border border-slate-200 bg-white p-4">
+      <app-barcode [value]="codigo()" [width]="2" [height]="80" />
+    </div>
+
+    <div class="mt-6 flex justify-end">
+      <button type="button" (click)="cerrar.emit()"
+              class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
+        Cerrar
+      </button>
+    </div>
+  </div>
+</div>

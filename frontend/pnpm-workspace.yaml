@@ -1,0 +1,7 @@
+allowBuilds:
+  '@parcel/watcher': false
+  esbuild: true
+  lmdb: true
+  msgpackr-extract: true
+
+minimumReleaseAge: 1440

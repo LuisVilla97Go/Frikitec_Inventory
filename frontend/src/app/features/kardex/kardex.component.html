@@ -1,0 +1,786 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
+  @if (!selectedProductId()) {
+    <div
+      class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6"
+    >
+      <div>
+        <h1 class="text-3xl font-heading font-bold text-brand-dark">
+          Kardex de Inventario
+        </h1>
+        <p class="text-brand-secondary mt-1">
+          Selecciona un producto para ver y gestionar sus movimientos.
+        </p>
+      </div>
+      <a
+        routerLink="/toma-fisica"
+        href="/toma-fisica"
+        class="inline-flex shrink-0 items-center gap-2 rounded-lg border border-brand-primary px-4 py-2 text-sm font-semibold text-brand-primaryDark hover:bg-orange-50"
+      >
+        <svg
+          aria-hidden="true"
+          [lucideIcon]="icons.Layers"
+          class="h-4 w-4"
+        ></svg>
+        Conciliar varios productos
+      </a>
+    </div>
+
+    <!-- Buscador -->
+    <div
+      class="bg-white p-4 rounded-xl shadow-sm border border-brand-border mb-6"
+    >
+      <div class="relative max-w-md">
+        <div
+          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+        >
+          <svg
+            aria-hidden="true"
+            [lucideIcon]="icons.Search"
+            class="h-5 w-5 text-gray-400"
+          ></svg>
+        </div>
+        <input
+          type="search"
+          [value]="busqueda()"
+          (input)="actualizarBusqueda($event)"
+          aria-label="Buscar productos"
+          class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-brand-primary focus:border-brand-primary"
+          placeholder="Buscar por SKU, nombre o código de barras..."
+        />
+      </div>
+    </div>
+
+    <!-- Tabla de productos -->
+    <div
+      class="bg-white rounded-xl shadow-sm border border-brand-border overflow-hidden"
+    >
+      <section
+        class="overflow-x-auto"
+        tabindex="0"
+        aria-label="Tabla de productos"
+      >
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th
+                class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase"
+              >
+                SKU / CB
+              </th>
+              <th
+                class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase"
+              >
+                Producto
+              </th>
+              <th
+                class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase"
+              >
+                Categoría
+              </th>
+              <th
+                class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase"
+              >
+                Acciones
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            @if (productsQuery.isPending()) {
+              <tr>
+                <td
+                  colspan="4"
+                  class="px-6 py-12 text-center text-sm text-gray-500"
+                >
+                  Cargando productos...
+                </td>
+              </tr>
+            } @else if (productsQuery.isError()) {
+              <tr>
+                <td
+                  colspan="4"
+                  class="px-6 py-12 text-center text-sm text-rose-600"
+                >
+                  No se pudieron cargar los productos.
+                </td>
+              </tr>
+            } @else {
+              @for (prod of productsQuery.data()?.data ?? []; track prod.id) {
+                <tr
+                  class="hover:bg-slate-50 transition-colors cursor-pointer"
+                  (click)="selectProduct(prod)"
+                >
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span
+                      class="text-sm font-mono font-bold text-slate-700 block"
+                      >{{ prod.sku }}</span
+                    >
+                    <span
+                      class="text-xs text-slate-500 font-mono flex items-center gap-1 mt-1"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        [lucideIcon]="icons.Tag"
+                        class="w-3 h-3"
+                      ></svg>
+                      {{ prod.barcode || "Sin CB" }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4">
+                    <div class="text-sm font-medium text-slate-900">
+                      {{ prod.name }}
+                    </div>
+                    <div class="text-xs text-slate-500">
+                      {{ prod.brand }}
+                      @if (prod.variant) {
+                        — {{ prod.variant }}
+                      }
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700"
+                    >
+                      {{ prod.category }}
+                    </span>
+                    @if (prod.sub_category) {
+                      <div class="text-xs text-slate-400 mt-1">
+                        {{ prod.sub_category }}
+                      </div>
+                    }
+                  </td>
+                  <td
+                    class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                  >
+                    <button
+                      type="button"
+                      class="inline-flex items-center px-3 py-1.5 text-sky-700 hover:bg-sky-50 rounded-lg transition-colors font-semibold"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        [lucideIcon]="icons.BookOpen"
+                        class="w-4 h-4 mr-2"
+                      ></svg>
+                      Abrir Kardex
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td
+                    colspan="4"
+                    class="px-6 py-12 text-center text-sm text-gray-500"
+                  >
+                    No se encontraron productos.
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </section>
+
+      <app-paginador
+        [pagina]="pagina()"
+        [porPagina]="porPagina()"
+        [total]="productsQuery.data()?.total ?? 0"
+        etiqueta="productos"
+        (paginaCambia)="pagina.set($event)"
+        (porPaginaCambia)="cambiarPorPagina($event)"
+      />
+    </div>
+  } @else {
+    <!-- Kardex detallado -->
+
+    @if (kardexQuery.isPending()) {
+      <div class="py-20 text-center text-slate-500">Cargando Kardex...</div>
+    } @else if (kardexQuery.isError()) {
+      <div class="py-20 text-center text-rose-500">
+        No se pudo cargar el Kardex.
+        <button type="button" (click)="selectProduct(null)" class="underline">
+          Volver
+        </button>
+      </div>
+    } @else {
+      @if (kardexQuery.data(); as kardex) {
+        <!-- Header del producto -->
+        <div
+          class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6"
+        >
+          <div class="flex items-center gap-3">
+            <button
+              type="button"
+              (click)="selectProduct(null)"
+              class="p-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors text-slate-600"
+              title="Volver al catálogo"
+            >
+              <svg
+                aria-hidden="true"
+                [lucideIcon]="icons.ChevronLeft"
+                class="w-5 h-5"
+              ></svg>
+            </button>
+            <div>
+              <h1 class="text-2xl font-heading font-bold text-brand-dark">
+                {{ kardex.name }}
+              </h1>
+              <p class="text-brand-secondary text-sm font-mono">
+                {{ kardex.sku }}
+                <span
+                  class="text-[11px] font-normal text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-100 ml-2"
+                  id="productCategoryBadge"
+                  >{{ kardex.category || "Sin categoría" }}</span
+                >
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            (click)="openMovimientoModal()"
+            [disabled]="!selectedProductId()"
+            class="shrink-0 text-sm font-semibold bg-sky-600 hover:bg-sky-700 text-white px-4 py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
+          >
+            <svg
+              aria-hidden="true"
+              [lucideIcon]="icons.Plus"
+              class="w-4 h-4"
+            ></svg>
+            Nuevo Movimiento
+          </button>
+        </div>
+
+        <div
+          class="flex flex-wrap gap-1 mb-4 border-b border-slate-200"
+          role="tablist"
+          aria-label="Tienda"
+        >
+          <button
+            type="button"
+            role="tab"
+            (click)="elegirAlmacen('')"
+            [attr.aria-selected]="almacenSeleccionado() === ''"
+            [class]="
+              almacenSeleccionado() === ''
+                ? 'border-sky-600 text-sky-700'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            "
+            class="px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors"
+          >
+            Global
+          </button>
+          @for (almacen of kardex.warehouses; track almacen.id) {
+            <button
+              type="button"
+              role="tab"
+              (click)="elegirAlmacen(almacen.id)"
+              [attr.aria-selected]="almacenSeleccionado() === almacen.id"
+              [class]="
+                almacenSeleccionado() === almacen.id
+                  ? 'border-sky-600 text-sky-700'
+                  : 'border-transparent text-slate-500 hover:text-slate-700'
+              "
+              class="px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors"
+            >
+              {{ almacen.name }}
+            </button>
+          }
+        </div>
+
+        <!-- KPIs -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <!-- Stock actual -->
+          <div
+            class="bg-white rounded-2xl border border-slate-200 p-4 relative overflow-hidden group hover:shadow-md transition-shadow"
+          >
+            <div
+              class="absolute right-0 top-0 w-16 h-16 bg-sky-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"
+            ></div>
+            <div
+              class="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center text-sky-600 relative z-10"
+            >
+              <svg
+                aria-hidden="true"
+                [lucideIcon]="icons.Package"
+                class="w-4 h-4"
+              ></svg>
+            </div>
+            <div class="mt-3 relative z-10">
+              <p class="text-xs font-medium text-slate-500">Stock Actual</p>
+              <p class="text-2xl font-bold text-slate-900 mt-0.5">
+                {{ kpis().currentStock }}
+              </p>
+              @if (stockStatus() === "optimo") {
+                <span
+                  class="flex items-center text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 mt-1 w-fit"
+                  id="badgeStockOptimo"
+                >
+                  <div
+                    class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"
+                  ></div>
+                  Nivel Óptimo
+                </span>
+              } @else if (stockStatus() === "agotado") {
+                <span
+                  class="flex items-center text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100 mt-1 w-fit"
+                  id="badgeStockAgotado"
+                >
+                  <div
+                    class="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5"
+                  ></div>
+                  Agotado
+                </span>
+              } @else {
+                <span
+                  class="flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100 mt-1 w-fit"
+                >
+                  <div
+                    class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5"
+                  ></div>
+                  Stock Crítico
+                </span>
+              }
+            </div>
+          </div>
+          <!-- Costo promedio -->
+          <div
+            class="bg-white rounded-2xl border border-slate-200 p-4 relative overflow-hidden group hover:shadow-md transition-shadow"
+          >
+            <div
+              class="absolute right-0 top-0 w-16 h-16 bg-emerald-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"
+            ></div>
+            <div
+              class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 relative z-10"
+            >
+              <svg
+                aria-hidden="true"
+                [lucideIcon]="icons.Calculator"
+                class="w-4 h-4"
+              ></svg>
+            </div>
+            <div class="mt-3 relative z-10">
+              <p class="text-xs font-medium text-slate-500">Costo Promedio</p>
+              <p class="text-xl font-bold text-slate-900 mt-0.5">
+                S/. {{ kpis().currentAvgCost | number: "1.2-2" }}
+              </p>
+              <p class="text-[10px] text-slate-400 mt-0.5">por unidad (CPP)</p>
+            </div>
+          </div>
+          <!-- Valorización -->
+          <div
+            class="bg-white rounded-2xl border border-slate-200 p-4 relative overflow-hidden group hover:shadow-md transition-shadow"
+          >
+            <div
+              class="absolute right-0 top-0 w-16 h-16 bg-sky-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"
+            ></div>
+            <div
+              class="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center text-sky-600 relative z-10"
+            >
+              <svg
+                aria-hidden="true"
+                [lucideIcon]="icons.DollarSign"
+                class="w-4 h-4"
+              ></svg>
+            </div>
+            <div class="mt-3 relative z-10">
+              <p class="text-xs font-medium text-slate-500">
+                Valorización Total
+              </p>
+              <p class="text-xl font-bold text-slate-900 mt-0.5">
+                S/. {{ kpis().currentValuation | number: "1.2-2" }}
+              </p>
+            </div>
+          </div>
+          <!-- Flujo entradas vs salidas -->
+          <div
+            class="bg-white rounded-2xl border border-slate-200 p-4 relative overflow-hidden group hover:shadow-md transition-shadow"
+          >
+            <div
+              class="absolute right-0 top-0 w-16 h-16 bg-rose-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"
+            ></div>
+            <div
+              class="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 relative z-10"
+            >
+              <svg
+                aria-hidden="true"
+                [lucideIcon]="icons.ArrowLeftRight"
+                class="w-4 h-4"
+              ></svg>
+            </div>
+            <div class="mt-3 relative z-10">
+              <p class="text-xs font-medium text-slate-500">Flujo</p>
+              <p class="text-sm font-bold text-slate-900 mt-0.5">
+                <span class="text-emerald-600">↑ {{ kpis().totalIn }}</span>
+                <span class="text-slate-400 mx-1">/</span>
+                <span class="text-rose-600">↓ {{ kpis().totalOut }}</span>
+              </p>
+              <div
+                class="w-full h-1.5 bg-rose-100 rounded-full overflow-hidden flex relative z-10 mt-2"
+              >
+                <div
+                  class="h-full bg-emerald-500 transition-all duration-500"
+                  [style.width.%]="kpis().inPct"
+                  id="barInPct"
+                ></div>
+                <div
+                  class="h-full bg-rose-500 transition-all duration-500"
+                  [style.width.%]="kpis().outPct"
+                  id="barOutPct"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Barra de filtros -->
+        <div
+          class="bg-white rounded-t-2xl border border-slate-200 border-b-0 px-4 py-3 flex flex-wrap items-center gap-3"
+        >
+          <!-- Búsqueda en movimientos -->
+          <div class="relative flex-1 min-w-[180px]">
+            <svg
+              aria-hidden="true"
+              [lucideIcon]="icons.Search"
+              class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400"
+            ></svg>
+            <input
+              type="text"
+              [value]="filterSearch()"
+              (input)="alCambiarTexto('search', $event)"
+              aria-label="Buscar en movimientos"
+              class="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500 bg-slate-50"
+              placeholder="Buscar en movimientos..."
+            />
+          </div>
+          <!-- Filtro tipo -->
+          <select
+            [value]="filterType()"
+            (change)="alCambiarTipo($event)"
+            aria-label="Tipo de movimiento"
+            class="text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
+            id="filterType"
+          >
+            <option value="ALL">Todos los Movimientos</option>
+            <option value="ENTRADA">Solo Entradas</option>
+            <option value="SALIDA">Solo Salidas</option>
+          </select>
+          <!-- Rango de fecha -->
+          <div
+            class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs"
+          >
+            <span class="text-slate-400">Desde:</span>
+            <input
+              [value]="filterFromDate()"
+              (change)="alCambiarTexto('from', $event)"
+              aria-label="Desde"
+              class="bg-transparent border-0 text-slate-700 text-xs focus:outline-none cursor-pointer"
+              id="filterFromDate"
+              type="date"
+            />
+            <span class="text-slate-400">Hasta:</span>
+            <input
+              [value]="filterToDate()"
+              (change)="alCambiarTexto('to', $event)"
+              aria-label="Hasta"
+              class="bg-transparent border-0 text-slate-700 text-xs focus:outline-none cursor-pointer"
+              id="filterToDate"
+              type="date"
+            />
+          </div>
+          <button
+            type="button"
+            (click)="resetFilters()"
+            class="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+            title="Limpiar filtros"
+            aria-label="Limpiar filtros"
+          >
+            <svg
+              aria-hidden="true"
+              [lucideIcon]="icons.RotateCcw"
+              class="w-3.5 h-3.5"
+            ></svg>
+          </button>
+          <!-- Contador + export -->
+          <div
+            class="text-xs font-medium text-slate-500 flex items-center justify-between md:justify-end gap-2 ml-auto"
+          >
+            <span id="filteredCountBadge"
+              >Mostrando {{ filteredLedger().length }} de
+              {{ processedLedger().length }} registros</span
+            >
+            <button
+              type="button"
+              (click)="exportToCSV()"
+              [disabled]="filteredLedger().length === 0"
+              class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+            >
+              <svg
+                aria-hidden="true"
+                class="w-3.5 h-3.5"
+                [lucideIcon]="icons.Download"
+              ></svg>
+              CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabla Kardex con colores -->
+        <div
+          class="bg-white border border-slate-200 rounded-b-2xl overflow-hidden shadow-xs"
+        >
+          <section
+            class="overflow-x-auto"
+            tabindex="0"
+            aria-label="Kardex del producto"
+          >
+            <table class="w-full text-left border-collapse" id="kardexTable">
+              <thead>
+                <tr
+                  class="bg-slate-100/90 text-slate-700 text-[11px] font-bold uppercase tracking-wider border-b border-slate-200"
+                >
+                  <th
+                    class="px-4 py-2.5 border-r border-slate-200 text-slate-600"
+                    colspan="3"
+                  >
+                    Documento &amp; Transacción
+                  </th>
+                  <th
+                    class="px-3 py-2.5 bg-emerald-50/70 text-emerald-800 text-center border-r border-slate-200"
+                    colspan="3"
+                  >
+                    <span class="inline-flex items-center gap-1">
+                      <svg
+                        aria-hidden="true"
+                        class="w-3 h-3 text-emerald-600"
+                        [lucideIcon]="icons.LogIn"
+                      ></svg>
+                      Entradas
+                    </span>
+                  </th>
+                  <th
+                    class="px-3 py-2.5 bg-rose-50/70 text-rose-800 text-center border-r border-slate-200"
+                    colspan="3"
+                  >
+                    <span class="inline-flex items-center gap-1">
+                      <svg
+                        aria-hidden="true"
+                        class="w-3 h-3 text-rose-600"
+                        [lucideIcon]="icons.LogOut"
+                      ></svg>
+                      Salidas
+                    </span>
+                  </th>
+                  <th
+                    class="px-3 py-2.5 bg-sky-50/70 text-sky-900 text-center"
+                    colspan="3"
+                  >
+                    <span class="inline-flex items-center gap-1">
+                      <svg
+                        aria-hidden="true"
+                        class="w-3 h-3 text-sky-600"
+                        [lucideIcon]="icons.Layers"
+                      ></svg>
+                      Existencias / Saldos
+                    </span>
+                  </th>
+                </tr>
+                <tr
+                  class="bg-slate-50 text-[10px] font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200"
+                >
+                  <th class="px-3 py-2 text-slate-600">Fecha</th>
+                  <th class="px-3 py-2 text-slate-600">Tipo &amp; Doc.</th>
+                  <th
+                    class="px-3 py-2 text-slate-600 border-r border-slate-200"
+                  >
+                    Concepto / Detalle
+                  </th>
+                  <th
+                    class="px-2.5 py-2 text-right bg-emerald-50/40 text-emerald-800"
+                  >
+                    Cant.
+                  </th>
+                  <th
+                    class="px-2.5 py-2 text-right bg-emerald-50/40 text-emerald-800"
+                  >
+                    Costo U.
+                  </th>
+                  <th
+                    class="px-3 py-2 text-right bg-emerald-50/40 text-emerald-900 border-r border-slate-200 font-bold"
+                  >
+                    Total S/.
+                  </th>
+                  <th
+                    class="px-2.5 py-2 text-right bg-rose-50/40 text-rose-800"
+                  >
+                    Cant.
+                  </th>
+                  <th
+                    class="px-2.5 py-2 text-right bg-rose-50/40 text-rose-800"
+                  >
+                    Costo U.
+                  </th>
+                  <th
+                    class="px-3 py-2 text-right bg-rose-50/40 text-rose-900 border-r border-slate-200 font-bold"
+                  >
+                    Total S/.
+                  </th>
+                  <th class="px-2.5 py-2 text-right bg-sky-50/40 text-sky-800">
+                    Cant.
+                  </th>
+                  <th class="px-2.5 py-2 text-right bg-sky-50/40 text-sky-800">
+                    C. Prom.
+                  </th>
+                  <th
+                    class="px-3 py-2 text-right bg-sky-50/40 text-sky-950 font-bold"
+                  >
+                    Saldo Total S/.
+                  </th>
+                </tr>
+              </thead>
+              <tbody
+                class="divide-y divide-slate-100 text-xs text-slate-700"
+                id="kardexTableBody"
+              >
+                @for (r of filteredLedger(); track r.id; let i = $index) {
+                  <tr
+                    class="hover:bg-slate-50/80 transition-colors group"
+                    [class.hidden]="!enPaginaDelKardex(i)"
+                    [class.print:table-row]="!enPaginaDelKardex(i)"
+                  >
+                    <td
+                      class="px-3 py-2.5 whitespace-nowrap font-mono text-slate-600 text-[11px]"
+                    >
+                      {{ r.date }}
+                    </td>
+                    <td class="px-3 py-2.5 whitespace-nowrap">
+                      <span
+                        class="text-[11px] font-bold text-slate-700 block"
+                        >{{ r.docType }}</span
+                      >
+                      <span class="text-[10px] text-slate-400 font-mono">{{
+                        r.docNumber
+                      }}</span>
+                      @if (r.purchaseOrderId && r.purchaseOrderNumber) {
+                        <a
+                          href="/ordenes"
+                          [routerLink]="['/ordenes', r.purchaseOrderId]"
+                          class="block text-[10px] font-medium text-brand-primaryDark hover:underline"
+                          >OC {{ r.purchaseOrderNumber }}</a
+                        >
+                      }
+                    </td>
+                    <td class="px-3 py-2.5 border-r border-slate-200">
+                      <span
+                        [title]="r.detail"
+                        class="text-xs text-slate-700 font-medium line-clamp-1"
+                        >{{ r.detail }}</span
+                      >
+                      @if (almacenSeleccionado() === "") {
+                        <span class="text-[10px] text-slate-400">{{
+                          r.warehouse
+                        }}</span>
+                      }
+                    </td>
+                    <td
+                      class="px-2.5 py-2.5 text-right font-mono text-emerald-700 bg-emerald-50/20"
+                    >
+                      {{ r.inQty || "-" }}
+                    </td>
+                    <td
+                      class="px-2.5 py-2.5 text-right font-mono text-slate-500 bg-emerald-50/20"
+                    >
+                      {{ r.inCost ? (r.inCost | number: "1.2-2") : "-" }}
+                    </td>
+                    <td
+                      class="px-3 py-2.5 text-right font-mono font-bold text-emerald-800 bg-emerald-50/20 border-r border-slate-200"
+                    >
+                      {{ r.inTotal ? (r.inTotal | number: "1.2-2") : "-" }}
+                    </td>
+                    <td
+                      class="px-2.5 py-2.5 text-right font-mono text-rose-700 bg-rose-50/20"
+                    >
+                      {{ r.outQty || "-" }}
+                    </td>
+                    <td
+                      class="px-2.5 py-2.5 text-right font-mono text-slate-500 bg-rose-50/20"
+                    >
+                      {{ r.outCost ? (r.outCost | number: "1.2-2") : "-" }}
+                    </td>
+                    <td
+                      class="px-3 py-2.5 text-right font-mono font-bold text-rose-800 bg-rose-50/20 border-r border-slate-200"
+                    >
+                      {{ r.outTotal ? (r.outTotal | number: "1.2-2") : "-" }}
+                    </td>
+                    <td
+                      class="px-2.5 py-2.5 text-right font-mono font-bold text-sky-700 bg-sky-50/30"
+                    >
+                      {{ r.balanceQty }}
+                    </td>
+                    <td
+                      class="px-2.5 py-2.5 text-right font-mono text-sky-700/70 bg-sky-50/30 text-[10px]"
+                    >
+                      {{ r.balanceCost | number: "1.4-4" }}
+                    </td>
+                    <td
+                      class="px-3 py-2.5 text-right font-mono font-bold text-sky-950 bg-sky-50/30"
+                    >
+                      {{ r.balanceTotal | number: "1.2-2" }}
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td class="text-center py-10 text-slate-500" colspan="12">
+                      Sin movimientos registrados
+                    </td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot
+                class="bg-slate-50/90 font-mono text-xs font-bold border-t-2 border-slate-300"
+                id="kardexTableFoot"
+              ></tfoot>
+            </table>
+          </section>
+          @if (filteredLedger().length > 0) {
+            <div class="print:hidden">
+              <app-paginador
+                [pagina]="paginaKardexActual()"
+                [porPagina]="porPaginaKardex()"
+                [total]="filteredLedger().length"
+                etiqueta="movimientos"
+                (paginaCambia)="paginaKardex.set($event)"
+                (porPaginaCambia)="cambiarPorPaginaKardex($event)"
+              />
+            </div>
+          }
+        </div>
+
+        <!-- Nota CPP -->
+        <div
+          class="mt-4 p-3.5 rounded-xl bg-slate-100/70 border border-slate-200/80 text-xs text-slate-500 flex items-start gap-2.5"
+        >
+          <svg
+            aria-hidden="true"
+            class="w-4 h-4 text-amber-500 shrink-0 mt-0.5"
+            [lucideIcon]="icons.Lightbulb"
+          ></svg>
+          <p>
+            <span class="font-semibold text-slate-700"
+              >Regla del Costo Promedio Ponderado (CPP):</span
+            >
+            Cada tienda lleva su propio costo: el costo unitario es el valor
+            acumulado de la tienda entre sus unidades. Cada salida se lleva su
+            parte de ese valor, así que la última deja la tienda en S/ 0.00 sin
+            perder céntimos. La pestaña Global suma los valores de las tiendas;
+            no promedia sus costos.
+          </p>
+        </div>
+      }
+    }
+  }
+</div>
+
+@if (showModal()) {
+  <app-kardex-movimiento-modal
+    [productId]="selectedProductId()"
+    (closeModal)="closeMovimientoModal()"
+  />
+}

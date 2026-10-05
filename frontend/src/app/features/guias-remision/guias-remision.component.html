@@ -1,0 +1,1263 @@
+@if (currentView() === "list") {
+  <div class="print:hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="sm:flex sm:items-center sm:justify-between mb-8">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Guías de Remisión</h1>
+        <p class="mt-2 text-sm text-gray-700">
+          Gestión de traslados entre tiendas y despachos.
+        </p>
+      </div>
+      <div class="mt-4 sm:mt-0 flex gap-3">
+        <button
+          type="button"
+          class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+        >
+          <svg
+            aria-hidden="true"
+            [lucideIcon]="Filter"
+            class="w-4 h-4 mr-2"
+          ></svg>
+          Filtros
+        </button>
+        <button
+          type="button"
+          (click)="openForm()"
+          class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-primaryDark hover:bg-orange-800"
+        >
+          <svg
+            aria-hidden="true"
+            [lucideIcon]="Plus"
+            class="w-4 h-4 mr-2"
+          ></svg>
+          Nueva Guía
+        </button>
+      </div>
+    </div>
+
+    <div class="bg-white shadow-sm ring-1 ring-gray-300 sm:rounded-lg">
+      <section
+        class="overflow-x-auto sm:rounded-t-lg"
+        tabindex="0"
+        aria-label="Tabla de guías de remisión"
+      >
+        <table class="min-w-full divide-y divide-gray-300">
+          <thead class="bg-gray-50">
+            <tr>
+              <th
+                class="py-3.5 pl-4 pr-3 text-left text-xs font-semibold text-gray-900 uppercase"
+              >
+                N° Guía SUNAT
+              </th>
+              <th
+                class="px-3 py-3.5 text-left text-xs font-semibold text-gray-900 uppercase"
+              >
+                Fecha Traslado
+              </th>
+              <th
+                class="px-3 py-3.5 text-left text-xs font-semibold text-gray-900 uppercase"
+              >
+                Origen → Destino
+              </th>
+              <th
+                class="px-3 py-3.5 text-right text-xs font-semibold text-gray-900 uppercase"
+              >
+                Unidades
+              </th>
+              <th
+                class="px-3 py-3.5 text-left text-xs font-semibold text-gray-900 uppercase"
+              >
+                Estado
+              </th>
+              <th class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                <span class="sr-only">Acciones</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 bg-white">
+            @if (guiasQuery.isPending()) {
+              <tr>
+                <td
+                  colspan="6"
+                  class="px-6 py-12 text-center text-sm text-gray-500"
+                >
+                  Cargando guías…
+                </td>
+              </tr>
+            } @else if (guiasQuery.isError()) {
+              <tr>
+                <td
+                  colspan="6"
+                  class="px-6 py-12 text-center text-sm text-red-700"
+                  role="alert"
+                >
+                  No se pudieron cargar las guías. Recarga la página para
+                  intentarlo de nuevo.
+                </td>
+              </tr>
+            } @else {
+              @for (g of guiasQuery.data()?.data ?? []; track g.id) {
+                <tr
+                  class="hover:bg-gray-50 cursor-pointer"
+                  (click)="openDetail(g)"
+                >
+                  <td
+                    class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-bold text-gray-900"
+                  >
+                    {{ g.numero_guia }}
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-600">
+                    {{ g.fecha_traslado | date: "dd/MM/yyyy" : "-0500" }}
+                  </td>
+                  <td class="px-3 py-4 text-sm text-gray-600">
+                    <span class="flex min-w-48 items-center gap-2"
+                      >{{ g.origen }}
+                      <span class="flex shrink-0"
+                        ><svg
+                          aria-hidden="true"
+                          [lucideIcon]="ArrowRight"
+                          class="w-4 h-4 text-gray-400"
+                        ></svg
+                      ></span>
+                      {{ g.destino }}</span
+                    >
+                    <span class="text-xs text-gray-500">{{
+                      nombreMotivo(g.motivo_traslado)
+                    }}</span>
+                  </td>
+                  <td
+                    class="whitespace-nowrap px-3 py-4 text-right text-sm tabular-nums text-gray-700"
+                  >
+                    {{ g.total_unidades }}
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm">
+                    @if (g.estado === "ANULADO") {
+                      <span
+                        class="inline-flex rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-700/10"
+                        >{{ nombreEstado(g.estado) }}</span
+                      >
+                    } @else {
+                      <span
+                        class="inline-flex rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10"
+                        >{{ nombreEstado(g.estado) }}</span
+                      >
+                    }
+                  </td>
+                  <td
+                    class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6"
+                  >
+                    <button
+                      type="button"
+                      (click)="$event.stopPropagation(); openDetail(g)"
+                      class="inline-flex items-center text-orange-700 bg-orange-50 hover:bg-orange-100 hover:text-orange-800 px-4 py-2 rounded-lg text-sm shadow-sm font-medium transition-colors border border-orange-200"
+                    >
+                      <span class="flex"
+                        ><svg
+                          aria-hidden="true"
+                          [lucideIcon]="Printer"
+                          class="w-4 h-4 mr-2"
+                        ></svg
+                      ></span>
+                      Ver / Imprimir
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td
+                    colspan="6"
+                    class="px-6 py-12 text-center text-sm text-gray-500"
+                  >
+                    Todavía no hay guías. Con «Nueva Guía» registras el primer
+                    traslado.
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </section>
+      @if (guiasQuery.data(); as paginaGuias) {
+        <div class="border-t border-gray-200 px-4">
+          <app-paginador
+            [pagina]="pagina()"
+            [porPagina]="porPagina()"
+            [total]="paginaGuias.total"
+            etiqueta="guías"
+            (paginaCambia)="pagina.set($event)"
+            (porPaginaCambia)="porPagina.set($event); pagina.set(1)"
+          />
+        </div>
+      }
+    </div>
+  </div>
+}
+
+@if (currentView() === "form") {
+  <div class="print:hidden max-w-5xl mx-auto px-4 py-8">
+    <div class="flex items-center space-x-4 mb-6">
+      <button
+        type="button"
+        (click)="volverDelFormulario()"
+        aria-label="Volver"
+        class="text-gray-400 hover:text-gray-900 p-2 rounded-full hover:bg-gray-200"
+      >
+        <svg aria-hidden="true" [lucideIcon]="ArrowLeft" class="w-5 h-5"></svg>
+      </button>
+      <div>
+        @if (editando(); as guia) {
+          <h1 class="text-2xl font-bold text-gray-900">
+            Editar guía {{ guia.numero_guia }}
+          </h1>
+          <p class="text-sm text-gray-500">
+            Transporte, fecha y peso cambian sin tocar el stock. Si cambias
+            productos, cantidades o almacenes, el traslado se deshace y se
+            rehace con el mismo número.
+          </p>
+        } @else {
+          <h1 class="text-2xl font-bold text-gray-900">
+            Registrar Nueva Guía de Remisión
+          </h1>
+          <p class="text-sm text-gray-500">
+            El correlativo será generado automáticamente por el sistema.
+          </p>
+        }
+      </div>
+    </div>
+
+    <form [formGroup]="form" class="space-y-6">
+      <div
+        class="bg-white shadow-sm ring-1 ring-gray-200 rounded-xl p-4 sm:p-6"
+      >
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
+          1. Datos Generales
+        </h3>
+
+        @if (formError()) {
+          <div
+            class="mb-4 bg-red-50 border-l-4 border-red-400 p-4"
+            role="alert"
+          >
+            <p class="text-sm text-red-700 font-medium">{{ formError() }}</p>
+          </div>
+        }
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700" for="fecha"
+              >Fecha Traslado <span class="text-red-500">*</span></label
+            >
+            <input
+              id="fecha"
+              type="date"
+              formControlName="fecha_traslado"
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-primary focus:ring-brand-primary text-sm py-2 px-3 border"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700" for="motivo"
+              >Motivo</label
+            >
+            <select
+              id="motivo"
+              formControlName="motivo_traslado"
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-primary focus:ring-brand-primary text-sm py-2 px-3 border bg-gray-50"
+            >
+              @for (m of MOTIVOS; track m.codigo) {
+                <option [value]="m.codigo" [selected]="m.codigo === motivo()">
+                  {{ m.codigo }} - {{ m.nombre }}
+                </option>
+              }
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700" for="peso"
+              >Peso Bruto Total (KGM) <span class="text-red-500">*</span></label
+            >
+            <input
+              id="peso"
+              type="number"
+              step="0.01"
+              min="0"
+              formControlName="peso_bruto_total"
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-primary focus:ring-brand-primary text-sm py-2 px-3 border"
+            />
+          </div>
+        </div>
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mt-4 sm:mt-6"
+        >
+          @if (esCompra()) {
+            <div>
+              <label
+                class="block text-sm font-medium text-gray-700"
+                for="proveedor"
+                >Proveedor (remitente)
+                <span class="text-red-500">*</span></label
+              >
+              <app-buscador-proveedor
+                inputId="proveedor"
+                formControlName="proveedor_id"
+                [proveedores]="proveedoresQuery.data() ?? []"
+              />
+              <p class="mt-1 text-xs text-gray-500">
+                Una guía de compra solo documenta el transporte: el stock entra
+                al recibir la orden de compra o con una compra en el Kardex.
+              </p>
+            </div>
+          } @else {
+            <div>
+              <label
+                class="block text-sm font-medium text-gray-700"
+                for="origen"
+                >Almacén Origen (Salida)
+                <span class="text-red-500">*</span></label
+              >
+              <select
+                id="origen"
+                formControlName="almacen_origen_id"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm py-2 px-3 border"
+              >
+                <option value="">Seleccione origen...</option>
+                @for (a of almacenesQuery.data(); track a.id) {
+                  <option [value]="a.id" [selected]="a.id === origenId()">
+                    {{ a.nombre }}
+                  </option>
+                }
+              </select>
+            </div>
+          }
+          <div>
+            <label class="block text-sm font-medium text-gray-700" for="destino"
+              >Tienda Destino (Entrada)
+              <span class="text-red-500">*</span></label
+            >
+            <select
+              id="destino"
+              formControlName="almacen_destino_id"
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm py-2 px-3 border"
+            >
+              <option value="">Seleccione destino...</option>
+              @for (a of almacenesQuery.data(); track a.id) {
+                <option [value]="a.id" [selected]="a.id === destinoId()">
+                  {{ a.nombre }}
+                </option>
+              }
+            </select>
+          </div>
+        </div>
+        <div
+          class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-4 sm:mt-6"
+        >
+          <div>
+            <label
+              class="block text-sm font-medium text-gray-700"
+              for="conductor"
+              >Conductor Nombre</label
+            >
+            <input
+              id="conductor"
+              type="text"
+              formControlName="conductor_nombre"
+              maxlength="100"
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-primary focus:ring-brand-primary text-sm py-2 px-3 border"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700" for="dni"
+              >Conductor DNI</label
+            >
+            <input
+              id="dni"
+              type="text"
+              formControlName="conductor_dni"
+              maxlength="20"
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-primary focus:ring-brand-primary text-sm py-2 px-3 border"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700" for="placa"
+              >Placa Vehículo</label
+            >
+            <input
+              id="placa"
+              type="text"
+              formControlName="vehiculo_placa"
+              maxlength="20"
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-primary focus:ring-brand-primary text-sm py-2 px-3 border uppercase"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="bg-white shadow-sm ring-1 ring-gray-200 rounded-xl p-4 sm:p-6 flex flex-col"
+      >
+        <div class="flex justify-between items-center mb-4 border-b pb-2">
+          <h3 class="text-lg font-semibold text-gray-900">
+            2. Bienes a Trasladar
+          </h3>
+        </div>
+        <div class="relative flex items-center gap-2 mb-4">
+          <input
+            type="text"
+            [formControl]="searchControl"
+            (focus)="showAutocomplete.set(true)"
+            aria-label="Buscar producto"
+            placeholder="Buscar producto por nombre o escanear SKU..."
+            class="w-full border-gray-300 rounded-md py-2 px-3 border text-sm shadow-sm focus:border-brand-primary focus:ring-brand-primary"
+          />
+          <button
+            type="button"
+            (click)="openScanner()"
+            class="p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 rounded-md flex-shrink-0 transition-colors"
+            title="Escanear con cámara"
+            aria-label="Escanear con cámara"
+          >
+            <svg aria-hidden="true" [lucideIcon]="Camera" class="w-5 h-5"></svg>
+          </button>
+          @if (showAutocomplete() && productosQuery.data()?.data?.length) {
+            <ul
+              class="absolute top-full left-0 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto sm:text-sm z-10"
+            >
+              @for (p of productosQuery.data()?.data; track p.id) {
+                <li
+                  class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-50"
+                  (mousedown)="selectProducto(p)"
+                >
+                  <span class="block truncate font-medium">{{ p.name }}</span>
+                  <span class="block truncate text-gray-500 text-xs"
+                    >{{ p.sku }} | {{ p.brand }}</span
+                  >
+                </li>
+              }
+            </ul>
+          }
+        </div>
+        <section
+          class="overflow-x-auto"
+          tabindex="0"
+          aria-label="Productos de la guía"
+        >
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th
+                  class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase w-12"
+                >
+                  N.º
+                </th>
+                <th
+                  class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+                >
+                  SKU
+                </th>
+                <th
+                  class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+                >
+                  Descripción
+                </th>
+                @if (!esCompra()) {
+                  <th
+                    class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase whitespace-nowrap"
+                  >
+                    Stock en origen
+                  </th>
+                }
+                <th
+                  class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase w-28"
+                >
+                  Cantidad
+                </th>
+                <th
+                  class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase w-16"
+                >
+                  Acción
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 bg-white">
+              @for (d of detalles(); track d.producto_id; let i = $index) {
+                <tr>
+                  <td
+                    class="px-3 py-3 text-center text-sm text-gray-500 tabular-nums"
+                  >
+                    {{ i + 1 }}
+                  </td>
+                  <td
+                    class="px-3 py-3 text-sm font-mono text-gray-900 whitespace-nowrap"
+                  >
+                    {{ d.sku }}
+                  </td>
+                  <td
+                    class="px-3 py-3 text-sm font-medium text-gray-900 min-w-40"
+                  >
+                    {{ d.nombre }}
+                  </td>
+                  @if (!esCompra()) {
+                    <td
+                      class="px-3 py-3 text-right text-sm tabular-nums text-gray-700 whitespace-nowrap"
+                    >
+                      @if (!origenId()) {
+                        <span class="text-xs text-gray-500"
+                          >Elige el origen</span
+                        >
+                      } @else if (disponible(d.producto_id) === null) {
+                        <span class="text-xs text-gray-500">…</span>
+                      } @else {
+                        {{ disponible(d.producto_id) }}
+                      }
+                    </td>
+                  }
+                  <td class="px-3 py-3 align-top">
+                    <input
+                      type="number"
+                      [attr.aria-label]="'Cantidad de ' + d.nombre"
+                      [value]="d.cantidad"
+                      (change)="
+                        updateCantidad(
+                          d.producto_id,
+                          +$any($event.target).value
+                        )
+                      "
+                      min="1"
+                      [attr.max]="disponible(d.producto_id)"
+                      [attr.aria-invalid]="excede(d)"
+                      class="w-full text-center rounded-md shadow-sm sm:text-sm py-1 border"
+                      [class.border-red-600]="excede(d)"
+                      [class.border-gray-300]="!excede(d)"
+                    />
+                    @if (excede(d)) {
+                      <p class="mt-1 text-xs font-medium text-red-700">
+                        Máximo {{ disponible(d.producto_id) }}
+                      </p>
+                    }
+                  </td>
+                  <td class="px-3 py-3 text-center">
+                    <button
+                      type="button"
+                      (click)="removeDetalle(d.producto_id)"
+                      [attr.aria-label]="'Quitar ' + d.nombre"
+                      class="text-red-500 hover:text-red-700"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        [lucideIcon]="Trash2"
+                        class="w-4 h-4"
+                      ></svg>
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td
+                    class="px-3 py-6 text-sm text-gray-500 italic text-center"
+                    [attr.colspan]="esCompra() ? 5 : 6"
+                  >
+                    Busca o escanea un producto para agregarlo.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </section>
+        @if (detalles().length) {
+          <p class="mt-3 text-right text-sm text-gray-700">
+            {{ detalles().length }}
+            {{ detalles().length === 1 ? "ítem" : "ítems" }} ·
+            {{ totalUnidades() }}
+            {{ totalUnidades() === 1 ? "unidad" : "unidades" }}
+          </p>
+        }
+      </div>
+
+      <div class="flex justify-end gap-3 pt-4">
+        <button
+          type="button"
+          (click)="volverDelFormulario()"
+          class="px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="guardar()"
+          [disabled]="guardarMutation.isPending()"
+          class="px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand-primaryDark hover:bg-orange-800 disabled:opacity-50"
+        >
+          {{
+            guardarMutation.isPending()
+              ? "Guardando..."
+              : editando()
+                ? "Guardar cambios"
+                : "Guardar Guía (Kardex)"
+          }}
+        </button>
+      </div>
+    </form>
+  </div>
+}
+
+@if (currentView() === "detail") {
+  @if (guiaQuery.data(); as guia) {
+    <div>
+      <div
+        class="print:hidden bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center sticky top-0 z-10 shadow-sm"
+      >
+        <div class="flex items-center gap-3 sm:gap-4 min-w-0">
+          <button
+            type="button"
+            (click)="openList()"
+            aria-label="Volver a la lista"
+            class="text-gray-400 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100"
+          >
+            <svg
+              aria-hidden="true"
+              [lucideIcon]="ArrowLeft"
+              class="w-5 h-5"
+            ></svg>
+          </button>
+          <div class="hidden sm:block bg-orange-50 p-2 rounded-lg">
+            <svg
+              aria-hidden="true"
+              [lucideIcon]="Truck"
+              class="w-6 h-6 text-brand-primaryDark"
+            ></svg>
+          </div>
+          <div class="min-w-0">
+            <h1
+              class="text-lg sm:text-xl font-bold text-gray-900 whitespace-nowrap"
+            >
+              Traslado {{ guia.numero_guia }}
+            </h1>
+            <p class="text-sm text-gray-500">
+              Estado:
+              <span
+                class="font-medium"
+                [class.text-red-700]="guia.estado === 'ANULADO'"
+                [class.text-blue-700]="guia.estado !== 'ANULADO'"
+                >{{ nombreEstado(guia.estado) }}</span
+              >
+            </p>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2 sm:gap-3">
+          <button
+            type="button"
+            (click)="openForm()"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+          >
+            <svg aria-hidden="true" [lucideIcon]="Plus" class="w-4 h-4"></svg>
+            Nueva Guía
+          </button>
+          @if (guia.estado !== "ANULADO") {
+            <button
+              type="button"
+              (click)="editar(guia)"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+            >
+              <svg
+                aria-hidden="true"
+                [lucideIcon]="Pencil"
+                class="w-4 h-4"
+              ></svg>
+              Editar
+            </button>
+            @if (puedeAnular()) {
+              <button
+                type="button"
+                (click)="abrirAnular()"
+                class="px-4 py-2 text-sm font-medium text-red-700 bg-white border border-red-200 rounded-lg hover:bg-red-50 flex items-center gap-2"
+              >
+                <svg
+                  aria-hidden="true"
+                  [lucideIcon]="Ban"
+                  class="w-4 h-4"
+                ></svg>
+                Anular
+              </button>
+            }
+          }
+          <button
+            type="button"
+            (click)="printDocument()"
+            class="px-4 py-2 text-sm font-medium text-white bg-brand-primaryDark rounded-lg hover:bg-orange-800 flex items-center gap-2 shadow-sm"
+          >
+            <svg
+              aria-hidden="true"
+              [lucideIcon]="Printer"
+              class="w-4 h-4"
+            ></svg>
+            Imprimir Guía (A4)
+          </button>
+        </div>
+      </div>
+
+      <section
+        class="overflow-x-auto bg-gray-100 py-2 sm:py-4 print:overflow-visible print:bg-white print:p-0"
+        tabindex="0"
+        aria-label="Vista previa de la guía en A4"
+      >
+        <div
+          class="sheet-a4 relative bg-white mx-auto print:m-0 text-gray-900 print:text-[10px]"
+        >
+          @if (guia.estado === "ANULADO") {
+            <div
+              class="mb-4 rounded-lg border-2 border-red-700 p-3 text-red-800 print:p-2"
+            >
+              <p
+                class="text-sm font-bold uppercase tracking-wide print:text-xs"
+              >
+                Guía anulada{{
+                  guia.anulada_en
+                    ? " el " + (guia.anulada_en | date: "dd/MM/yyyy" : "-0500")
+                    : ""
+                }}
+              </p>
+              <p class="text-xs print:text-[9px]">
+                Motivo: {{ guia.motivo_anulacion }}
+              </p>
+            </div>
+          }
+          <header
+            class="flex justify-between items-start mb-6 border-b-2 border-gray-900 pb-4"
+          >
+            <div class="w-[50%]">
+              <div class="flex items-center gap-2 mb-2">
+                <img
+                  src="/favicon.avif"
+                  alt=""
+                  width="96"
+                  height="96"
+                  class="h-12 w-12 shrink-0 print:h-9 print:w-9"
+                />
+                <img
+                  src="/logo-frikitec-negro.png"
+                  alt="Frikitec Logo"
+                  class="h-8 max-w-[200px] object-contain object-left print:h-6"
+                />
+              </div>
+              @if (empresaQuery.data(); as empresa) {
+                <h2
+                  class="text-base font-bold tracking-tight text-gray-900 print:text-sm"
+                >
+                  {{ empresa.razon_social }}
+                </h2>
+                @if (empresa.direccion_fiscal) {
+                  <p class="text-[11px] text-gray-600 mt-1 print:text-[9px]">
+                    {{ empresa.direccion_fiscal }}
+                  </p>
+                }
+                @if (ubicacionEmpresa()) {
+                  <p class="text-[11px] text-gray-600 print:text-[9px]">
+                    {{ ubicacionEmpresa() }}
+                  </p>
+                }
+              } @else if (empresaQuery.isSuccess()) {
+                <p
+                  class="rounded-md border border-amber-300 bg-amber-50 p-2 text-xs font-medium text-amber-900"
+                  role="status"
+                >
+                  Faltan los datos de la empresa:
+                  <a
+                    routerLink="/maestros/empresa"
+                    href="/maestros/empresa"
+                    class="underline print:no-underline"
+                    >Maestros › Empresa</a
+                  >
+                </p>
+              }
+            </div>
+
+            <div class="w-[45%] flex flex-col items-center">
+              <div
+                class="w-full border-2 border-gray-900 rounded-lg text-center p-2 mb-2 print:p-1"
+              >
+                <p class="text-base font-bold text-gray-900 print:text-sm">
+                  RUC: {{ empresaQuery.data()?.ruc ?? "—" }}
+                </p>
+                <div
+                  class="bg-gray-900 text-white font-bold py-1 my-1 text-xs print:text-[10px]"
+                >
+                  GUÍA DE REMISIÓN REMITENTE
+                </div>
+                <p
+                  class="text-lg font-mono font-bold text-gray-900 print:text-base"
+                >
+                  {{ guia.numero_guia }}
+                </p>
+              </div>
+              <div class="flex flex-col items-center">
+                <app-barcode
+                  [value]="guia.numero_guia.replace('-', '')"
+                  [width]="1.2"
+                  [height]="30"
+                  [displayValue]="false"
+                  class="text-gray-900"
+                ></app-barcode>
+                <span
+                  class="text-[9px] font-mono mt-0.5 text-gray-700 tracking-widest print:text-[8px]"
+                  >*{{ guia.numero_guia }}*</span
+                >
+              </div>
+            </div>
+          </header>
+
+          <div class="grid grid-cols-2 gap-4 mb-6 text-xs print:text-[10px]">
+            <div class="space-y-3">
+              <div
+                class="bg-gray-50 p-3 rounded-lg border border-gray-200 print:p-2"
+              >
+                <p
+                  class="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1 print:text-[8px]"
+                >
+                  Motivo del Traslado
+                </p>
+                <p class="font-bold text-gray-900 text-sm print:text-xs">
+                  {{ nombreMotivo(guia.motivo_traslado) }} ({{
+                    guia.motivo_traslado
+                  }})
+                </p>
+                <p class="text-[11px] text-gray-600 mt-1 print:text-[9px]">
+                  Fecha:
+                  {{ guia.fecha_traslado | date: "dd/MM/yyyy" : "-0500" }}
+                </p>
+              </div>
+              <div
+                class="relative pl-4 border-l-2 border-brand-primary space-y-3 print:space-y-2"
+              >
+                <div>
+                  <p
+                    class="text-[10px] text-gray-500 font-medium uppercase tracking-wider print:text-[8px]"
+                  >
+                    {{
+                      guia.proveedor_id
+                        ? "Punto de Partida (proveedor)"
+                        : "Punto de Partida"
+                    }}
+                  </p>
+                  <p class="font-bold text-gray-900 print:text-xs">
+                    {{ guia.origen }}
+                  </p>
+                  @if (guia.proveedor_documento) {
+                    <p class="text-[11px] text-gray-600 print:text-[9px]">
+                      {{ guia.proveedor_documento }}
+                    </p>
+                  }
+                </div>
+                <div>
+                  <p
+                    class="text-[10px] text-gray-500 font-medium uppercase tracking-wider print:text-[8px]"
+                  >
+                    Punto de Llegada
+                  </p>
+                  <p class="font-bold text-gray-900 print:text-xs">
+                    {{ guia.destino }}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-3">
+              <div
+                class="bg-gray-50 p-3 rounded-lg border border-gray-200 print:p-2"
+              >
+                <p
+                  class="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1 print:text-[8px]"
+                >
+                  Transporte Privado
+                </p>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                  <div>
+                    <p class="text-[10px] text-gray-500 print:text-[8px]">
+                      Conductor
+                    </p>
+                    <p
+                      class="font-semibold text-gray-900 text-xs print:text-[10px]"
+                    >
+                      {{ guia.conductor_nombre || "N/A" }}
+                    </p>
+                    <p class="text-[11px] text-gray-600 print:text-[9px]">
+                      DNI: {{ guia.conductor_dni || "-" }}
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-[10px] text-gray-500 print:text-[8px]">
+                      Vehículo
+                    </p>
+                    <p
+                      class="font-semibold text-gray-900 text-xs print:text-[10px]"
+                    >
+                      {{ guia.vehiculo_placa || "N/A" }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="flex gap-4">
+                <div
+                  class="bg-gray-50 p-3 rounded-lg border border-gray-200 flex-1 print:p-2"
+                >
+                  <p
+                    class="text-[10px] text-gray-500 font-medium uppercase tracking-wider print:text-[8px]"
+                  >
+                    Peso Bruto Total
+                  </p>
+                  <p class="text-base font-bold text-gray-900 print:text-sm">
+                    {{ guia.peso_bruto_total }}
+                    <span
+                      class="text-xs font-normal text-gray-500 print:text-[9px]"
+                      >KGM</span
+                    >
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-8 print:mb-4">
+            <table
+              class="w-full text-xs text-left border-collapse print:text-[10px]"
+            >
+              <thead
+                class="text-[10px] text-gray-700 uppercase bg-gray-100 border-y-2 border-gray-900 print:text-[8px]"
+              >
+                <tr>
+                  <th class="px-3 py-2 w-12 print:px-1">Item</th>
+                  <th class="px-3 py-2 w-20 print:px-1">Cód. SKU</th>
+                  <th class="px-3 py-2 print:px-1">Descripción del Bien</th>
+                  <th class="px-3 py-2 w-16 text-center print:px-1">U.M.</th>
+                  <th class="px-3 py-2 w-20 text-right print:px-1">Cantidad</th>
+                </tr>
+              </thead>
+              <tbody
+                class="divide-y divide-gray-200 border-b-2 border-gray-900"
+              >
+                @for (d of guia.detalles; track $index; let i = $index) {
+                  <tr class="hover:bg-gray-50">
+                    <td
+                      class="px-3 py-2 text-center text-gray-500 print:px-1 print:py-1"
+                    >
+                      {{ i + 1 }}
+                    </td>
+                    <td
+                      class="px-3 py-2 font-mono text-gray-900 whitespace-nowrap print:px-1 print:py-1"
+                    >
+                      {{ d.producto_sku }}
+                    </td>
+                    <td
+                      class="px-3 py-2 font-semibold text-gray-900 print:px-1 print:py-1"
+                    >
+                      {{ d.producto_nombre }}
+                    </td>
+                    <td
+                      class="px-3 py-2 text-center text-gray-600 print:px-1 print:py-1"
+                    >
+                      NIU
+                    </td>
+                    <td
+                      class="px-3 py-2 text-right font-bold text-gray-900 text-sm print:text-xs print:px-1 print:py-1"
+                    >
+                      {{ d.cantidad }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="-mt-6 mb-8 break-inside-avoid print:-mt-2 print:mb-0">
+            <p class="text-right text-xs text-gray-700 print:text-[10px]">
+              Total:
+              <span class="font-bold text-gray-900"
+                >{{ guia.total_items }}
+                {{ guia.total_items === 1 ? "ítem" : "ítems" }}</span
+              >
+              ·
+              <span class="font-bold text-gray-900"
+                >{{ guia.total_unidades }}
+                {{ guia.total_unidades === 1 ? "unidad" : "unidades" }}</span
+              >
+            </p>
+            <div
+              class="grid grid-cols-2 gap-20 mt-32 px-12 print:mt-12 print:px-6"
+            >
+              <div class="border-t border-gray-500 pt-3 text-center">
+                <p
+                  class="font-bold text-xs text-gray-900 uppercase tracking-wide print:text-[10px]"
+                >
+                  Despachado por (Origen)
+                </p>
+                <div
+                  class="mt-8 flex flex-col gap-6 text-left px-4 print:mt-5 print:gap-4"
+                >
+                  <p
+                    class="text-[11px] text-gray-600 border-b border-dotted border-gray-400 pb-1 print:text-[10px]"
+                  >
+                    Nombre:
+                  </p>
+                  <p
+                    class="text-[11px] text-gray-600 border-b border-dotted border-gray-400 pb-1 print:text-[10px]"
+                  >
+                    DNI:
+                  </p>
+                  <p
+                    class="text-[11px] text-gray-600 border-b border-dotted border-gray-400 pb-1 print:text-[10px]"
+                  >
+                    Fecha:
+                  </p>
+                </div>
+              </div>
+              <div class="border-t border-gray-500 pt-3 text-center">
+                <p
+                  class="font-bold text-xs text-gray-900 uppercase tracking-wide print:text-[10px]"
+                >
+                  Recibido Conforme (Destino)
+                </p>
+                <div
+                  class="mt-8 flex flex-col gap-6 text-left px-4 print:mt-5 print:gap-4"
+                >
+                  <p
+                    class="text-[11px] text-gray-600 border-b border-dotted border-gray-400 pb-1 print:text-[10px]"
+                  >
+                    Nombre:
+                  </p>
+                  <p
+                    class="text-[11px] text-gray-600 border-b border-dotted border-gray-400 pb-1 print:text-[10px]"
+                  >
+                    DNI:
+                  </p>
+                  <p
+                    class="text-[11px] text-gray-600 border-b border-dotted border-gray-400 pb-1 print:text-[10px]"
+                  >
+                    Fecha:
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <dialog
+        #anularDialog
+        aria-labelledby="anular-titulo"
+        class="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border-0 bg-white p-0 shadow-2xl backdrop:bg-slate-950/60 backdrop:backdrop-blur-sm print:hidden"
+      >
+        <form (submit)="$event.preventDefault(); anular(guia)" class="p-6">
+          <h2 id="anular-titulo" class="text-lg font-bold text-gray-900">
+            Anular la guía {{ guia.numero_guia }}
+          </h2>
+          <p class="mt-2 text-sm text-gray-600">
+            @if (guia.proveedor_id) {
+              Es una guía de compra: no movió stock, así que anularla tampoco lo
+              mueve.
+            } @else {
+              Las {{ guia.total_unidades }} unidades vuelven de
+              {{ guia.destino }} a {{ guia.origen }}, con su valor. La guía
+              queda en la lista como anulada y su número no se reutiliza.
+            }
+          </p>
+          <label
+            for="motivo-anulacion"
+            class="mt-4 block text-sm font-medium text-gray-700"
+            >Motivo <span class="text-red-500">*</span></label
+          >
+          <textarea
+            id="motivo-anulacion"
+            [formControl]="motivoAnulacion"
+            rows="3"
+            maxlength="500"
+            class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-primary focus:ring-brand-primary"
+          ></textarea>
+          @if (anularError()) {
+            <p class="mt-2 text-sm font-medium text-red-700" role="alert">
+              {{ anularError() }}
+            </p>
+          }
+          <div class="mt-6 flex justify-end gap-3">
+            <button
+              type="button"
+              (click)="cerrarAnular()"
+              class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Volver
+            </button>
+            <button
+              type="submit"
+              [disabled]="anularMutation.isPending()"
+              class="rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-50"
+            >
+              {{ anularMutation.isPending() ? "Anulando…" : "Anular guía" }}
+            </button>
+          </div>
+        </form>
+      </dialog>
+    </div>
+  } @else if (guiaQuery.isError()) {
+    <div class="print:hidden p-8 text-center">
+      <p class="text-sm text-red-700" role="alert">
+        No se pudo abrir la guía. Puede que ya no exista.
+      </p>
+      <button
+        type="button"
+        (click)="openList()"
+        class="mt-4 text-sm font-medium text-brand-primaryDark underline"
+      >
+        ← Volver a la lista
+      </button>
+    </div>
+  } @else {
+    <div class="print:hidden p-8 text-center text-sm text-gray-500">
+      Cargando guía…
+    </div>
+  }
+}
+
+@if (isScannerOpen()) {
+  <div class="fixed inset-0 z-50 overflow-y-auto print:hidden">
+    <div
+      class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"
+    >
+      <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+        <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+      </div>
+      <span
+        class="hidden sm:inline-block sm:align-middle sm:h-screen"
+        aria-hidden="true"
+        >&#8203;</span
+      >
+      <div
+        class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6"
+      >
+        <div class="absolute top-0 right-0 pt-4 pr-4">
+          <button
+            type="button"
+            (click)="closeScanner()"
+            class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+          >
+            <span class="sr-only">Cerrar</span>
+            <svg aria-hidden="true" [lucideIcon]="X" class="h-6 w-6"></svg>
+          </button>
+        </div>
+        <div class="sm:flex sm:items-start">
+          <div
+            class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-orange-100 sm:mx-0 sm:h-10 sm:w-10"
+          >
+            <svg
+              aria-hidden="true"
+              [lucideIcon]="Camera"
+              class="h-6 w-6 text-brand-primaryDark"
+            ></svg>
+          </div>
+          <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2">
+              Escanear Producto
+            </h3>
+
+            <div
+              class="relative aspect-video w-full overflow-hidden rounded-xl bg-black my-4"
+            >
+              <video
+                #videoRef
+                class="h-full w-full object-cover"
+                muted
+                playsInline
+              ></video>
+
+              @if (!activo()) {
+                <div
+                  class="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white/70"
+                >
+                  <svg
+                    aria-hidden="true"
+                    [lucideIcon]="Camera"
+                    class="w-8 h-8"
+                  ></svg>
+                  <span class="text-[12px] font-bold">Cámara apagada</span>
+                </div>
+              } @else {
+                <div
+                  class="pointer-events-none absolute inset-8 rounded-lg border-2 border-white/70"
+                ></div>
+              }
+            </div>
+
+            @if (camError()) {
+              <p class="text-sm font-bold text-red-600 text-center mb-3">
+                {{ camError() }}
+              </p>
+            }
+          </div>
+        </div>
+
+        <!-- Footer del modal -->
+        <div
+          class="mt-5 sm:mt-4 flex items-center justify-end gap-3 bg-gray-50 px-4 py-3 sm:px-6 sm:flex-row-reverse -mx-4 -mb-4 sm:-mx-6 sm:-mb-6 border-t border-gray-200"
+        >
+          @if (!activo()) {
+            <button
+              type="button"
+              (click)="iniciarCamara()"
+              [disabled]="arrancando()"
+              class="h-10 px-5 rounded-lg bg-brand-primaryDark text-white text-sm font-bold flex items-center gap-2 hover:bg-orange-800 transition-colors disabled:opacity-40"
+            >
+              <svg
+                aria-hidden="true"
+                [lucideIcon]="Camera"
+                class="w-4 h-4"
+              ></svg>
+              {{ arrancando() ? "Abriendo cámara..." : "Reintentar" }}
+            </button>
+          } @else {
+            <button
+              type="button"
+              (click)="detenerCamara()"
+              class="h-10 px-5 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-bold flex items-center gap-2 hover:bg-gray-50 transition-colors"
+            >
+              <svg
+                aria-hidden="true"
+                [lucideIcon]="CameraOff"
+                class="w-4 h-4"
+              ></svg>
+              Apagar
+            </button>
+          }
+          <button
+            type="button"
+            (click)="closeScanner()"
+            class="h-10 px-5 rounded-lg border border-transparent text-gray-600 text-sm font-bold hover:text-gray-800 hover:bg-gray-200 transition-colors"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+@if (scanResult()) {
+  <div
+    role="status"
+    class="fixed bottom-4 left-4 right-4 sm:left-auto sm:w-96 z-50 bg-green-50 border-l-4 border-green-400 p-4 shadow-lg rounded-md print:hidden"
+  >
+    <div class="flex">
+      <div class="flex-shrink-0">
+        <svg
+          aria-hidden="true"
+          class="h-5 w-5 text-green-400"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </div>
+      <div class="ml-3">
+        <p class="text-sm text-green-700 font-medium">
+          {{ scanResult() }}
+        </p>
+      </div>
+    </div>
+  </div>
+}
