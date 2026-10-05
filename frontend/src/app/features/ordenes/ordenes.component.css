@@ -1,0 +1,49 @@
+@page orden-compra {
+  size: A4;
+  margin: 14mm;
+}
+
+@media print {
+  :host {
+    display: block;
+    page: orden-compra;
+  }
+
+  .orden-tabla table {
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+  }
+
+  .orden-tabla th,
+  .orden-tabla td {
+    min-width: 0;
+    padding: 2mm 1mm;
+    font-size: 10px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .orden-tabla th:first-child {
+    width: 30%;
+  }
+
+  .orden-tabla th:nth-child(2) {
+    width: 20%;
+  }
+
+  .orden-tabla span {
+    font-size: inherit;
+    line-height: inherit;
+    white-space: normal;
+  }
+
+  .orden-tabla thead {
+    display: table-header-group;
+  }
+
+  .orden-documento tr,
+  .orden-documento [aria-label^="Total"] {
+    break-inside: avoid;
+  }
+}

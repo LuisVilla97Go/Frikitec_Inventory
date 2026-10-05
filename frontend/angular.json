@@ -1,0 +1,169 @@
+{
+	"$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+	"version": 1,
+	"cli": {
+		"packageManager": "pnpm",
+		"analytics": false
+	},
+	"newProjectRoot": "projects",
+	"projects": {
+		"frontend": {
+			"projectType": "application",
+			"schematics": {},
+			"root": "",
+			"sourceRoot": "src",
+			"prefix": "app",
+			"architect": {
+				"build": {
+					"builder": "@angular/build:application",
+					"options": {
+						"outputPath": {
+							"base": "dist/frontend/browser",
+							"browser": ""
+						},
+						"index": "src/index.html",
+						"browser": "src/main.ts",
+						"polyfills": ["zone.js"],
+						"tsConfig": "tsconfig.app.json",
+						"assets": [
+							{
+								"glob": "**/*",
+								"input": "public"
+							},
+							{
+								"glob": "LICENSE",
+								"input": "node_modules/tailwindcss",
+								"output": "licencias/tailwindcss"
+							},
+							{
+								"glob": "LICENSE",
+								"input": "node_modules/tailwindcss/src/css",
+								"output": "licencias/preflight"
+							}
+						],
+						"styles": [
+							"@fontsource/rubik/latin-400.css",
+							"@fontsource/rubik/latin-500.css",
+							"@fontsource/rubik/latin-600.css",
+							"@fontsource/rubik/latin-700.css",
+							"@fontsource/tomorrow/latin-500.css",
+							"@fontsource/tomorrow/latin-600.css",
+							"@fontsource/tomorrow/latin-700.css",
+							"src/styles.css"
+						],
+						"scripts": []
+					},
+					"configurations": {
+						"production": {
+							"extractLicenses": true,
+							"budgets": [
+								{
+									"type": "initial",
+									"maximumWarning": "600kB",
+									"maximumError": "800kB"
+								},
+								{
+									"type": "anyComponentStyle",
+									"maximumWarning": "2kB",
+									"maximumError": "4kB"
+								}
+							],
+							"outputHashing": "all"
+						},
+						"development": {
+							"optimization": false,
+							"extractLicenses": false,
+							"assets": [
+								{ "glob": "**/*", "input": "public" },
+								{
+									"glob": "LICENSE",
+									"input": "node_modules/tailwindcss",
+									"output": "licencias/tailwindcss"
+								},
+								{
+									"glob": "LICENSE",
+									"input": "node_modules/tailwindcss/src/css",
+									"output": "licencias/preflight"
+								},
+								{
+									"glob": "3rdpartylicenses.txt",
+									"input": "dist/frontend/browser",
+									"output": "/"
+								}
+							],
+							"sourceMap": true
+						},
+						"testing": {
+							"aot": false,
+							"optimization": false,
+							"extractLicenses": false,
+							"polyfills": ["zone.js", "zone.js/testing"]
+						}
+					},
+					"defaultConfiguration": "production"
+				},
+				"serve": {
+					"builder": "@angular/build:dev-server",
+					"options": {
+						"proxyConfig": "proxy.conf.json"
+					},
+					"configurations": {
+						"production": {
+							"buildTarget": "frontend:build:production"
+						},
+						"development": {
+							"buildTarget": "frontend:build:development"
+						}
+					},
+					"defaultConfiguration": "development"
+				},
+				"extract-i18n": {
+					"builder": "@angular/build:extract-i18n"
+				},
+				"test": {
+					"builder": "@angular/build:unit-test",
+					"options": {
+						"tsConfig": "tsconfig.spec.json",
+						"buildTarget": ":build:testing",
+						"runner": "vitest",
+						"coverageInclude": ["src/app/**/*.ts"],
+						"coverageExclude": ["src/app/**/*.spec.ts"],
+						"coverageReporters": ["text-summary", "text"],
+						"coverageThresholds": {
+							"statements": 81,
+							"branches": 71,
+							"functions": 73,
+							"lines": 81
+						}
+					}
+				}
+			}
+		}
+	},
+	"schematics": {
+		"@schematics/angular:component": {
+			"type": "component"
+		},
+		"@schematics/angular:directive": {
+			"type": "directive"
+		},
+		"@schematics/angular:service": {
+			"type": "service"
+		},
+		"@schematics/angular:guard": {
+			"typeSeparator": "."
+		},
+		"@schematics/angular:interceptor": {
+			"typeSeparator": "."
+		},
+		"@schematics/angular:module": {
+			"typeSeparator": "."
+		},
+		"@schematics/angular:pipe": {
+			"typeSeparator": "."
+		},
+		"@schematics/angular:resolver": {
+			"typeSeparator": "."
+		}
+	}
+}

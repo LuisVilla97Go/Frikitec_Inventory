@@ -1,0 +1,238 @@
+<div
+  class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-slate-900/50 backdrop-blur-sm p-4"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="titulo-movimiento"
+>
+  <div
+    class="relative w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden"
+  >
+    <div
+      class="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/50"
+    >
+      <h3 id="titulo-movimiento" class="text-base font-bold text-slate-800">
+        Registrar Movimiento
+      </h3>
+      <button
+        (click)="closeModal.emit()"
+        type="button"
+        aria-label="Cerrar"
+        class="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-lg transition-colors"
+      >
+        <svg aria-hidden="true" [lucideIcon]="icons.X" class="w-5 h-5"></svg>
+      </button>
+    </div>
+
+    <div class="p-5">
+      @if (errorMessage()) {
+        <div
+          class="mb-4 flex items-start gap-2.5 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm"
+        >
+          <svg
+            aria-hidden="true"
+            [lucideIcon]="icons.AlertCircle"
+            class="w-4 h-4 shrink-0 mt-0.5"
+          ></svg>
+          <p>{{ errorMessage() }}</p>
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
+        <div>
+          <label
+            for="almacen"
+            class="block text-xs font-semibold text-slate-700 mb-1"
+            >Almacén *</label
+          >
+          <select
+            id="almacen"
+            formControlName="almacen_id"
+            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all"
+          >
+            <option value="" disabled>
+              {{
+                almacenesQuery.isPending()
+                  ? "Cargando almacenes…"
+                  : "-- Elige un almacén --"
+              }}
+            </option>
+            @for (almacen of almacenesQuery.data() ?? []; track almacen.id) {
+              <option [value]="almacen.id">{{ almacen.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        @if (esCompra()) {
+          <div>
+            <label
+              for="proveedor"
+              class="block text-xs font-semibold text-slate-700 mb-1"
+              >Proveedor *</label
+            >
+            <app-buscador-proveedor
+              inputId="proveedor"
+              formControlName="proveedor_id"
+              [proveedores]="proveedoresQuery.data() ?? []"
+            />
+            @if (
+              !proveedoresQuery.isPending() &&
+              (proveedoresQuery.data()?.length ?? 0) === 0
+            ) {
+              <p class="mt-1 text-xs text-amber-700">
+                Registra primero un proveedor en Maestros.
+              </p>
+            }
+          </div>
+        }
+
+        <div>
+          <label
+            for="tipo"
+            class="block text-xs font-semibold text-slate-700 mb-1"
+            >Tipo de Movimiento *</label
+          >
+          <select
+            id="tipo"
+            formControlName="tipo_movimiento"
+            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all"
+          >
+            <optgroup label="Entradas">
+              @for (opcion of entradas; track opcion.valor) {
+                <option [value]="opcion.valor">{{ opcion.texto }}</option>
+              }
+            </optgroup>
+            <optgroup label="Salidas">
+              @for (opcion of salidas; track opcion.valor) {
+                <option [value]="opcion.valor">{{ opcion.texto }}</option>
+              }
+            </optgroup>
+            @if (esAdmin()) {
+              <optgroup label="Valor (solo administradores)">
+                <option value="REVALORIZACION">
+                  {{ textoRevalorizacion }}
+                </option>
+              </optgroup>
+            }
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label
+              for="documento"
+              class="block text-xs font-semibold text-slate-700 mb-1"
+              >Comprobante *</label
+            >
+            <select
+              id="documento"
+              formControlName="tipo_documento"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all"
+            >
+              @for (opcion of documentos; track opcion.valor) {
+                <option [value]="opcion.valor">{{ opcion.texto }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label
+              for="numero"
+              class="block text-xs font-semibold text-slate-700 mb-1"
+              >Nº Comprobante *</label
+            >
+            <input
+              id="numero"
+              type="text"
+              formControlName="numero_documento"
+              placeholder="F001-000123"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label
+              for="cantidad"
+              class="block text-xs font-semibold text-slate-700 mb-1"
+              >Cantidad (UND) *</label
+            >
+            <input
+              id="cantidad"
+              type="number"
+              formControlName="cantidad"
+              min="1"
+              step="1"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all disabled:opacity-50 disabled:bg-slate-100 disabled:cursor-not-allowed"
+            />
+            @if (esRevalorizacion()) {
+              <span class="text-[10px] text-slate-500 mt-1 block"
+                >No mueve unidades.</span
+              >
+            }
+          </div>
+          <div>
+            <label
+              for="costo"
+              class="block text-xs font-semibold text-slate-700 mb-1"
+              >{{
+                esRevalorizacion()
+                  ? "Nuevo costo unitario (S/.) *"
+                  : "Costo Unitario (S/.)"
+              }}</label
+            >
+            <input
+              id="costo"
+              type="number"
+              formControlName="costo_unitario"
+              min="0"
+              step="0.0001"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all disabled:opacity-50 disabled:bg-slate-100 disabled:cursor-not-allowed"
+            />
+            @if (esSalida()) {
+              <span class="text-[10px] text-slate-500 mt-1 block"
+                >Las salidas usan el costo promedio vigente.</span
+              >
+            }
+            @if (esRevalorizacion()) {
+              <span class="text-[10px] text-slate-500 mt-1 block"
+                >La tienda pasará a valer su stock × este costo.</span
+              >
+            }
+          </div>
+        </div>
+
+        <div
+          class="pt-3 mt-5 border-t border-slate-100 flex items-center justify-end gap-2"
+        >
+          <button
+            type="button"
+            (click)="closeModal.emit()"
+            [disabled]="mutation.isPending()"
+            class="px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            [disabled]="mutation.isPending()"
+            class="px-4 py-2 text-sm font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg shadow-sm transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            @if (mutation.isPending()) {
+              <span
+                class="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"
+              ></span>
+              Guardando...
+            } @else {
+              <svg
+                aria-hidden="true"
+                [lucideIcon]="icons.Save"
+                class="w-4 h-4"
+              ></svg>
+              Guardar Movimiento
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

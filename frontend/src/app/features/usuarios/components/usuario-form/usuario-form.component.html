@@ -1,0 +1,90 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="titulo-usuario">
+  <button type="button" class="absolute inset-0 bg-slate-900/50 cursor-default" aria-label="Cerrar" (click)="cerrar.emit()"></button>
+
+  <div class="relative w-full max-w-lg bg-white rounded-xl shadow-xl border border-slate-200">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+      <h2 id="titulo-usuario" class="text-lg font-semibold text-slate-900">
+        {{ esEdicion() ? 'Editar usuario' : 'Nuevo usuario' }}
+      </h2>
+      <button type="button" (click)="cerrar.emit()" class="p-1 text-slate-400 hover:text-slate-600 rounded-lg" aria-label="Cerrar">
+        <svg aria-hidden="true" [lucideIcon]="icons.X" class="h-5 w-5"></svg>
+      </button>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="guardar()" class="px-6 py-5 space-y-4">
+      @if (error()) {
+        <div class="flex items-start gap-2 rounded-lg bg-rose-50 border border-rose-200 p-3 text-sm text-rose-700" role="alert">
+          <svg aria-hidden="true" [lucideIcon]="icons.AlertCircle" class="h-4 w-4 mt-0.5 shrink-0"></svg>
+          {{ error() }}
+        </div>
+      }
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="nombres" class="block text-xs font-semibold text-slate-700 mb-1">Nombres *</label>
+          <input id="nombres" type="text" formControlName="nombres" autocomplete="given-name"
+                 class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                 [class.border-rose-400]="invalido('nombres')" [class.border-slate-200]="!invalido('nombres')">
+        </div>
+        <div>
+          <label for="apellidos" class="block text-xs font-semibold text-slate-700 mb-1">Apellidos *</label>
+          <input id="apellidos" type="text" formControlName="apellidos" autocomplete="family-name"
+                 class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                 [class.border-rose-400]="invalido('apellidos')" [class.border-slate-200]="!invalido('apellidos')">
+        </div>
+      </div>
+
+      <div>
+        <label for="email" class="block text-xs font-semibold text-slate-700 mb-1">Usuario o email *</label>
+        <input id="email" type="text" formControlName="email" autocomplete="off"
+               class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+               [class.border-rose-400]="invalido('email')" [class.border-slate-200]="!invalido('email')">
+      </div>
+
+      <div>
+        <label for="password" class="block text-xs font-semibold text-slate-700 mb-1">
+          Contraseña {{ esEdicion() ? '' : '*' }}
+          @if (esEdicion()) {
+            <span class="font-normal text-slate-400">(déjala vacía para conservar la actual)</span>
+          }
+        </label>
+        <input id="password" type="password" formControlName="password" autocomplete="new-password"
+               class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+               [class.border-rose-400]="invalido('password')" [class.border-slate-200]="!invalido('password')">
+        @if (invalido('password')) {
+          <p class="mt-1 text-xs text-rose-600">Mínimo {{ claveMinima }} caracteres.</p>
+        }
+      </div>
+
+      <div>
+        <label for="rol" class="block text-xs font-semibold text-slate-700 mb-1">Rol *</label>
+        <select id="rol" formControlName="rol"
+                class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary">
+          @for (opcion of roles(); track opcion.valor) {
+            <option [value]="opcion.valor">{{ opcion.texto }}</option>
+          }
+        </select>
+      </div>
+
+      <div>
+        <label for="cargo" class="block text-xs font-semibold text-slate-700 mb-1">Cargo</label>
+        <input id="cargo" type="text" formControlName="cargo" maxlength="100" autocomplete="organization-title"
+               placeholder="Ej. cargo en la organización"
+               class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary">
+        <p class="mt-1 text-xs text-slate-500">Es independiente del rol de acceso y podrá definir quién firma las órdenes de compra.</p>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-2">
+        <button type="button" (click)="cerrar.emit()" [disabled]="mutation.isPending()"
+                class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50">
+          Cancelar
+        </button>
+        <button type="submit" [disabled]="mutation.isPending()"
+                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand-primaryDark rounded-lg hover:bg-orange-800 disabled:opacity-50">
+          <svg aria-hidden="true" [lucideIcon]="icons.Save" class="h-4 w-4"></svg>
+          {{ mutation.isPending() ? 'Guardando...' : 'Guardar' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

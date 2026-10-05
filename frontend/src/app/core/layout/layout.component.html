@@ -1,0 +1,346 @@
+<div
+  class="fixed inset-0 flex bg-brand-bgSecondary overflow-hidden print:static print:block print:h-auto print:overflow-visible print:bg-white"
+>
+  <!-- Sidebar (Desktop) -->
+  <aside
+    class="hidden md:flex flex-col bg-white border-r border-brand-border transition-all duration-300 relative print:hidden"
+    [class.w-20]="isSidebarCollapsed()"
+    [class.w-64]="!isSidebarCollapsed()"
+  >
+    <button
+      type="button"
+      (click)="toggleSidebar()"
+      [attr.aria-label]="
+        isSidebarCollapsed() ? 'Expandir menú' : 'Colapsar menú'
+      "
+      class="absolute -right-3 top-6 bg-white border border-brand-border rounded-full p-1 text-gray-500 hover:text-brand-primaryDark shadow-sm z-10 transition-transform duration-300"
+    >
+      <svg
+        aria-hidden="true"
+        [lucideIcon]="isSidebarCollapsed() ? ChevronRight : ChevronLeft"
+        class="h-4 w-4"
+      ></svg>
+    </button>
+
+    <!-- Logo Area -->
+    <div
+      class="flex items-center justify-center h-20 border-b border-brand-border"
+      [class.px-2]="isSidebarCollapsed()"
+      [class.px-4]="!isSidebarCollapsed()"
+    >
+      @if (isSidebarCollapsed()) {
+        <img
+          ngSrc="/favicon.avif"
+          width="32"
+          height="32"
+          alt="Logo Frikitec"
+          class="h-8 w-8"
+        />
+      } @else {
+        <img
+          ngSrc="/logo-frikitec-negro.png"
+          width="1561"
+          height="259"
+          priority
+          alt="Logo Frikitec"
+          class="h-8 w-auto object-contain mr-3"
+        />
+      }
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-2">
+      @for (item of menuItems; track item.path) {
+        <a
+          [routerLink]="item.path"
+          href="{{ item.path }}"
+          routerLinkActive="bg-brand-primaryDark text-white"
+          [routerLinkActiveOptions]="{ exact: false }"
+          #rla="routerLinkActive"
+          [title]="isSidebarCollapsed() ? item.name : ''"
+          class="flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-brand-secondary hover:bg-gray-100 hover:text-brand-dark transition-colors group"
+          [class.justify-center]="isSidebarCollapsed()"
+        >
+          <span
+            class="flex shrink-0"
+            [class.mr-4]="!isSidebarCollapsed()"
+            [class.text-white]="rla.isActive"
+            [class.text-gray-400]="!rla.isActive"
+          >
+            <svg
+              aria-hidden="true"
+              [lucideIcon]="item.icon"
+              class="h-5 w-5"
+            ></svg>
+          </span>
+
+          @if (!isSidebarCollapsed()) {
+            <span class="truncate whitespace-nowrap">{{ item.name }}</span>
+          }
+        </a>
+      }
+      <div class="space-y-1 border-t border-slate-100 pt-3">
+        <button
+          type="button"
+          (click)="toggleMaestros()"
+          [attr.aria-expanded]="isMaestrosOpen() && !isSidebarCollapsed()"
+          [title]="isSidebarCollapsed() ? 'Maestros' : ''"
+          class="flex w-full items-center rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-orange-50 hover:text-brand-primaryDark"
+          [class.justify-center]="isSidebarCollapsed()"
+          [class.bg-orange-50]="isMaestrosRoute()"
+          [class.text-brand-primaryDark]="isMaestrosRoute()"
+          [class.text-brand-secondary]="!isMaestrosRoute()"
+        >
+          <span class="flex shrink-0" [class.mr-4]="!isSidebarCollapsed()"
+            ><svg
+              aria-hidden="true"
+              [lucideIcon]="Database"
+              class="h-5 w-5"
+            ></svg
+          ></span>
+          @if (!isSidebarCollapsed()) {
+            <span class="flex-1 text-left">Maestros</span>
+            <span
+              class="flex transition-transform"
+              [class.rotate-180]="isMaestrosOpen()"
+              ><svg
+                aria-hidden="true"
+                [lucideIcon]="ChevronDown"
+                class="h-4 w-4"
+              ></svg
+            ></span>
+          }
+        </button>
+        @if (isMaestrosOpen() && !isSidebarCollapsed()) {
+          <div
+            id="maestros-submenu"
+            class="ml-5 space-y-1 border-l border-slate-200 pl-3"
+          >
+            @for (item of maestroItems; track item.path) {
+              <a
+                [routerLink]="item.path"
+                href="{{ item.path }}"
+                routerLinkActive="bg-orange-50 text-brand-primaryDark"
+                [routerLinkActiveOptions]="{ exact: true }"
+                ariaCurrentWhenActive="page"
+                class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-brand-dark"
+              >
+                <svg
+                  aria-hidden="true"
+                  [lucideIcon]="item.icon"
+                  class="h-4 w-4 shrink-0"
+                ></svg>
+                {{ item.name }}
+              </a>
+            }
+          </div>
+        }
+      </div>
+      <a
+        [routerLink]="usuariosItem.path"
+        href="/usuarios"
+        routerLinkActive="bg-brand-primaryDark text-white"
+        #usuariosActivo="routerLinkActive"
+        [title]="isSidebarCollapsed() ? usuariosItem.name : ''"
+        class="flex items-center rounded-md px-3 py-2.5 text-sm font-medium text-brand-secondary transition-colors hover:bg-gray-100 hover:text-brand-dark"
+        [class.justify-center]="isSidebarCollapsed()"
+      >
+        <span
+          class="flex shrink-0"
+          [class.mr-4]="!isSidebarCollapsed()"
+          [class.text-white]="usuariosActivo.isActive"
+          [class.text-gray-400]="!usuariosActivo.isActive"
+          ><svg
+            aria-hidden="true"
+            [lucideIcon]="usuariosItem.icon"
+            class="h-5 w-5"
+          ></svg
+        ></span>
+        @if (!isSidebarCollapsed()) {
+          <span>{{ usuariosItem.name }}</span>
+        }
+      </a>
+    </nav>
+
+    <div class="border-t border-brand-border p-4">
+      <div
+        class="flex items-center mb-4"
+        [class.justify-center]="isSidebarCollapsed()"
+      >
+        <div class="flex-shrink-0">
+          <div
+            class="h-8 w-8 rounded-full bg-brand-primaryDark flex items-center justify-center text-white font-bold"
+            [title]="isSidebarCollapsed() ? nombreUsuario() : ''"
+          >
+            {{ inicial() }}
+          </div>
+        </div>
+        @if (!isSidebarCollapsed()) {
+          <div class="ml-3 overflow-hidden">
+            <p class="text-sm font-medium text-brand-dark truncate">
+              {{ nombreUsuario() }}
+            </p>
+            <p class="text-xs text-gray-500 truncate">{{ usuario()?.email }}</p>
+          </div>
+        }
+      </div>
+      <button
+        type="button"
+        (click)="logout()"
+        [title]="isSidebarCollapsed() ? 'Cerrar Sesión' : ''"
+        class="w-full flex items-center justify-center py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-brand-dark bg-white hover:bg-gray-50 transition-colors"
+        [class.px-0]="isSidebarCollapsed()"
+        [class.px-4]="!isSidebarCollapsed()"
+      >
+        <span class="flex" [class.mr-2]="!isSidebarCollapsed()"
+          ><svg aria-hidden="true" [lucideIcon]="LogOut" class="h-4 w-4"></svg
+        ></span>
+        @if (!isSidebarCollapsed()) {
+          <span class="truncate">Cerrar Sesión</span>
+        }
+      </button>
+    </div>
+  </aside>
+
+  <header
+    class="md:hidden flex flex-col w-full absolute top-0 z-10 print:hidden"
+  >
+    <div
+      class="flex items-center justify-between h-16 bg-white border-b border-brand-border px-4 shadow-sm"
+    >
+      <div class="flex items-center">
+        <img
+          ngSrc="/logo-frikitec-negro.png"
+          width="1561"
+          height="259"
+          alt="Logo"
+          class="h-8 w-auto mr-2"
+        />
+      </div>
+      <button
+        type="button"
+        (click)="toggleMobileMenu()"
+        class="text-gray-500 hover:text-brand-dark"
+        [attr.aria-label]="isMobileMenuOpen() ? 'Cerrar menú' : 'Abrir menú'"
+      >
+        <svg
+          aria-hidden="true"
+          [lucideIcon]="isMobileMenuOpen() ? X : Menu"
+          class="h-6 w-6"
+        ></svg>
+      </button>
+    </div>
+
+    <!-- Mobile Menu Dropdown -->
+    @if (isMobileMenuOpen()) {
+      <div
+        class="max-h-[calc(100vh-4rem)] overflow-y-auto border-b border-brand-border bg-white shadow-lg"
+      >
+        <nav class="px-2 pt-2 pb-4 space-y-1">
+          @for (item of menuItems; track item.path) {
+            <a
+              [routerLink]="item.path"
+              href="{{ item.path }}"
+              (click)="toggleMobileMenu()"
+              routerLinkActive="bg-brand-primaryDark text-white"
+              class="flex items-center px-3 py-2 text-base font-medium rounded-md text-gray-700 hover:bg-gray-50"
+            >
+              <svg
+                aria-hidden="true"
+                [lucideIcon]="item.icon"
+                class="h-5 w-5 mr-4"
+              ></svg>
+              {{ item.name }}
+            </a>
+          }
+          <div class="border-t border-slate-100 pt-2">
+            <button
+              type="button"
+              (click)="toggleMaestrosMobile()"
+              [attr.aria-expanded]="isMaestrosOpen()"
+              class="flex w-full items-center rounded-md px-3 py-2 text-base font-medium text-slate-700 hover:bg-orange-50"
+            >
+              <svg
+                aria-hidden="true"
+                [lucideIcon]="Database"
+                class="mr-4 h-5 w-5"
+              ></svg>
+              <span class="flex-1 text-left">Maestros</span>
+              <span
+                class="flex transition-transform"
+                [class.rotate-180]="isMaestrosOpen()"
+                ><svg
+                  aria-hidden="true"
+                  [lucideIcon]="ChevronDown"
+                  class="h-4 w-4"
+                ></svg
+              ></span>
+            </button>
+            @if (isMaestrosOpen()) {
+              <div
+                id="maestros-mobile-submenu"
+                class="ml-6 space-y-1 border-l border-slate-200 pl-3"
+              >
+                @for (item of maestroItems; track item.path) {
+                  <a
+                    [routerLink]="item.path"
+                    href="{{ item.path }}"
+                    (click)="toggleMobileMenu()"
+                    routerLinkActive="bg-orange-50 text-brand-primaryDark"
+                    [routerLinkActiveOptions]="{ exact: true }"
+                    ariaCurrentWhenActive="page"
+                    class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      [lucideIcon]="item.icon"
+                      class="h-4 w-4"
+                    ></svg>
+                    {{ item.name }}
+                  </a>
+                }
+              </div>
+            }
+          </div>
+          <a
+            [routerLink]="usuariosItem.path"
+            href="/usuarios"
+            (click)="toggleMobileMenu()"
+            routerLinkActive="bg-brand-primaryDark text-white"
+            class="flex items-center rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50"
+            ><svg
+              aria-hidden="true"
+              [lucideIcon]="usuariosItem.icon"
+              class="mr-4 h-5 w-5"
+            ></svg
+            >{{ usuariosItem.name }}</a
+          >
+          <div class="border-t border-gray-200 mt-4 pt-4 px-3">
+            <button
+              type="button"
+              (click)="logout()"
+              class="flex items-center w-full text-base font-medium text-brand-error"
+            >
+              <svg
+                aria-hidden="true"
+                [lucideIcon]="LogOut"
+                class="h-5 w-5 mr-4"
+              ></svg>
+              Cerrar Sesión
+            </button>
+          </div>
+        </nav>
+      </div>
+    }
+  </header>
+
+  <main
+    class="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden pt-16 md:pt-0 print:block print:overflow-visible print:pt-0"
+  >
+    <div
+      class="flex-1 min-h-0 overflow-y-auto print:overflow-visible [&>router-outlet]:hidden [&>router-outlet+*]:block"
+    >
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>
