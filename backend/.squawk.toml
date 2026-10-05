@@ -1,0 +1,4 @@
+excluded_rules = [
+  "prefer-text-field",
+  "prefer-bigint-over-int",
+]
