@@ -39,6 +39,7 @@ class UsuarioActualizar(BaseModel):
         default=None, min_length=CLAVE_MINIMA, max_length=CLAVE_MAXIMA
     )
     rol: RolUsuario | None = None
+    is_active: bool | None = Field(default=None, strict=True)
     cargo: str | None = Field(default=None, max_length=100)
 
     @field_validator("password", mode="before")
