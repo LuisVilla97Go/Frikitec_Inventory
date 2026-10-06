@@ -60,8 +60,14 @@ def cambiar_estado(usuario_id: UUID):
     return jsonify({"status": "success", "data": _salida(usuario)}), 200
 
 
+@usuarios_bp.delete("/<uuid:usuario_id>")
+@jwt_required()
+def eliminar_usuario(usuario_id: UUID):
+    usuarios_service.eliminar(usuario_id, _actor())
+    return "", 204
+
+
 def _actor() -> DimUsuario:
-    """Quien hace la petición. Si lo desactivaron después del login, no actúa."""
     actor = usuarios_service.obtener_activo(UUID(get_jwt_identity()))
     if actor is None:
         raise SinPermiso("Tu usuario está desactivado")

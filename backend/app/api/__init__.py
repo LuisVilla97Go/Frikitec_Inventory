@@ -1,5 +1,4 @@
 from flask import Flask
-
 from .almacenes import almacenes_bp
 from .auth import auth_bp
 from .dashboard import dashboard_bp
@@ -31,7 +30,6 @@ __all__ = [
 
 
 def registrar_blueprints(app: Flask) -> None:
-
     app.register_blueprint(almacenes_bp, url_prefix="/api/almacenes")
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(usuarios_bp, url_prefix="/api/usuarios")

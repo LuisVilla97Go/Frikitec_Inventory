@@ -66,7 +66,6 @@ from app.services.guias_service import (
 
 openapi_bp = Blueprint("openapi", __name__)
 
-
 SWAGGER_UI = "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.33.0"
 SRI_JS = "sha256-Yt9UFSkIBGSnZgrceT6rcSjGGTzjviTdweDgpKY+3C8="
 SRI_CSS = "sha256-GsMk99zSfkuThrS9ZCEnHsFH6SKiLAW6JLEVFemqYyE="
@@ -261,6 +260,14 @@ OPERACIONES: dict[str, Operacion] = {
         respuesta=UsuarioSalida,
         solo_admin=True,
     ),
+    "usuarios.eliminar_usuario": Operacion(
+        "Eliminar usuario",
+        U,
+        estado=204,
+        solo_admin=True,
+        descripcion="Retira la cuenta y bloquea su acceso conservando la autoría del historial. "
+        "No permite eliminar la cuenta propia ni gestionar roles superiores.",
+    ),
     "empresa.ver_empresa": Operacion(
         "Datos de la empresa",
         E,
@@ -429,7 +436,6 @@ _ERRORES = {
 
 
 def _ruta_openapi(regla: str) -> tuple[str, list[dict[str, Any]]]:
-    """`/api/x/<uuid:id>/` → `/api/x/{id}` y sus parámetros de ruta."""
     parametros: list[dict[str, Any]] = []
     partes = []
     for parte in regla.rstrip("/").split("/"):
@@ -489,7 +495,6 @@ def generar(app: Flask) -> dict[str, Any]:
             if descripcion:
                 operacion["description"] = descripcion
             if op.query:
-
                 nombre_esquema = ref(op.query)["$ref"].rsplit("/", 1)[-1]
                 definicion = esquemas.get(nombre_esquema, {})
                 requeridos = set(definicion.get("required", []))
@@ -521,7 +526,9 @@ def generar(app: Flask) -> dict[str, Any]:
                         }
                     },
                 }
-            if op.binario:
+            if op.estado == 204:
+                exito = {"description": "Eliminado; sin cuerpo de respuesta"}
+            elif op.binario:
                 exito = {"description": "OK", "content": {op.binario: {}}}
             else:
                 datos = ref(op.respuesta) if op.respuesta else {"type": "object"}
