@@ -1,11 +1,14 @@
 import json
 import os
 from pydantic import ValidationError
-from .services.errores import ErrorDeNegocio
-from dotenv import load_dotenv
+from uuid import UUID
 from flask import Flask, Response, jsonify, request
 from werkzeug.exceptions import HTTPException, RequestEntityTooLarge
 from werkzeug.middleware.proxy_fix import ProxyFix
+from dotenv import load_dotenv
+from .services import usuarios_service
+from .services.errores import ErrorDeNegocio
+from .api import registrar_blueprints
 from .config import aplicar_entorno, config
 from .extensions import cors, db, jwt, limiter, migrate
 from .proxy_firmado import IpDelProxyFirmado
@@ -15,6 +18,7 @@ _RAIZ = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__
 
 def create_app(config_name: str | None = None) -> Flask:
     load_dotenv(dotenv_path=os.path.join(_RAIZ, ".env"))
+
     nombre = config_name or os.environ.get("APP_CONFIG") or os.environ.get("FLASK_ENV")
     nombre = nombre or "development"
     if nombre not in config:
@@ -46,9 +50,9 @@ def create_app(config_name: str | None = None) -> Flask:
     limiter.init_app(app)
 
     with app.app_context():
-        from . import models
-
-    from .api import registrar_blueprints
+        from . import (
+            models,
+        )
 
     registrar_blueprints(app)
 
@@ -116,6 +120,17 @@ def _registrar_errores(app: Flask) -> None:
     jwt.expired_token_loader(
         lambda _cabecera, _datos: _no_autorizado("Sesión expirada")
     )
+    jwt.revoked_token_loader(
+        lambda _cabecera, _datos: _no_autorizado("Sesión inválida")
+    )
+
+    @jwt.token_in_blocklist_loader
+    def cuenta_eliminada(_cabecera: dict, datos: dict) -> bool:
+        try:
+            usuario_id = UUID(datos["sub"])
+        except (ValueError, TypeError, KeyError):
+            return True
+        return usuarios_service.esta_eliminado(usuario_id)
 
 
 def _registrar_cabeceras_de_seguridad(app: Flask) -> None:
@@ -124,7 +139,6 @@ def _registrar_cabeceras_de_seguridad(app: Flask) -> None:
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-
         if request.endpoint != "openapi.swagger_ui":
             response.headers["Content-Security-Policy"] = (
                 "default-src 'none'; frame-ancestors 'none'"

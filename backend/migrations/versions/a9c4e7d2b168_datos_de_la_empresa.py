@@ -1,6 +1,18 @@
+"""datos de la empresa: una sola ficha editable por un administrador
+
+Revision ID: a9c4e7d2b168
+Revises: f3b8d21c6a45
+Create Date: 2026-09-28 11:00:00
+
+docs/2026-09-28_mejoras-compras-guias_ABIERTO.md, punto 3: «no tenemos dónde
+poner los datos de la empresa». Tabla nueva y vacía: no se siembra nada (un
+cambio de datos se pregunta); la llena un administrador desde la pantalla.
+"""
+
 import sqlalchemy as sa
 from alembic import op
 
+# revision identifiers, used by Alembic.
 revision = "a9c4e7d2b168"
 down_revision = "f3b8d21c6a45"
 branch_labels = None
@@ -10,6 +22,7 @@ depends_on = None
 def upgrade():
     op.create_table(
         "dim_empresa",
+        # BIGINT aunque solo haya una fila: Squawk (prefer-bigint-over-smallint) no admite SMALLINT
         sa.Column("id", sa.BigInteger(), autoincrement=False, nullable=False),
         sa.Column("ruc", sa.String(length=11), nullable=False),
         sa.Column("razon_social", sa.String(length=200), nullable=False),
