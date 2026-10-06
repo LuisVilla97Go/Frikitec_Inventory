@@ -1,11 +1,11 @@
 import enum
 import uuid
 from datetime import UTC, datetime
-
 from app.extensions import db
 
 
 class RolUsuario(str, enum.Enum):
+    """Roles de acceso. SUPERADMIN solo lo asigna otro SUPERADMIN (usuarios_service)."""
 
     SUPERADMIN = "SUPERADMIN"
     ADMIN = "ADMIN"
@@ -24,17 +24,20 @@ class DimUsuario(db.Model):
     nombres = db.Column(db.String(100), nullable=False)
     apellidos = db.Column(db.String(100), nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
     rol = db.Column(db.String(20), default=RolUsuario.TRABAJADOR.value, nullable=False)
     cargo = db.Column(db.String(100), nullable=True)
     created_at = db.Column(
         db.DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )
+
     movimientos = db.relationship(
         "FactMovimiento", back_populates="usuario", lazy="dynamic"
     )
 
     @property
     def is_admin(self) -> bool:
+        """Puede gestionar usuarios. Se deriva del rol; ya no es una columna."""
         return self.rol in ROLES_ADMIN
 
     def __repr__(self):
