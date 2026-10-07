@@ -1,24 +1,44 @@
-<div class="fixed inset-0 z-[9999] flex items-center justify-center p-4" role="dialog" aria-modal="true" [attr.aria-label]="titulo()">
-  <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" aria-hidden="true" (click)="cancelar.emit()"></div>
-  <div class="relative w-full max-w-sm bg-white rounded-2xl shadow-xl border border-slate-200 p-6">
-    <div class="flex items-start gap-3">
-      <div class="w-10 h-10 shrink-0 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center">
-        <svg aria-hidden="true" [lucideIcon]="AlertTriangle" class="w-5 h-5"></svg>
-      </div>
-      <div>
-        <h3 class="text-base font-bold text-slate-900">{{ titulo() }}</h3>
-        <p class="mt-1 text-sm text-slate-600">{{ mensaje() }}</p>
-      </div>
-    </div>
-    <div class="mt-6 flex justify-end gap-2">
-      <button type="button" (click)="cancelar.emit()" [disabled]="ocupado()"
-              class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50">
-        Cancelar
-      </button>
-      <button type="button" (click)="confirmar.emit()" [disabled]="ocupado()"
-              class="px-4 py-2 text-sm font-medium text-white bg-rose-600 rounded-lg hover:bg-rose-700 disabled:opacity-50">
-        {{ textoConfirmar() }}
-      </button>
-    </div>
+<dialog
+  #dialogo
+  [attr.aria-label]="titulo()"
+  aria-describedby="mensaje-confirmacion"
+  (cancel)="pedirCancelacion($event)"
+  (keydown)="recorrerFoco($event)"
+  class="fixed inset-0 m-auto h-fit w-[calc(100%-2rem)] max-w-md rounded-2xl border border-brand-border bg-white p-7 text-center shadow-2xl backdrop:bg-slate-900/50 backdrop:backdrop-blur-sm"
+>
+  <div
+    class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full"
+    [class.bg-rose-50]="peligro()"
+    [class.text-rose-600]="peligro()"
+    [class.bg-emerald-50]="!peligro()"
+    [class.text-emerald-700]="!peligro()"
+  >
+    <svg aria-hidden="true" [lucideIcon]="icono()" class="h-8 w-8"></svg>
   </div>
-</div>
+  <h3 class="text-xl font-bold text-brand-dark">{{ titulo() }}</h3>
+  <p id="mensaje-confirmacion" class="mt-3 text-sm leading-6 text-slate-600">
+    {{ mensaje() }}
+  </p>
+  <div class="mt-7 flex justify-center gap-3">
+    <button
+      type="button"
+      (click)="pedirCancelacion()"
+      [disabled]="ocupado()"
+      class="min-h-11 rounded-xl border border-slate-300 bg-slate-50 px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primaryDark disabled:opacity-50"
+    >
+      Cancelar
+    </button>
+    <button
+      type="button"
+      (click)="pedirConfirmacion()"
+      [disabled]="ocupado()"
+      class="min-h-11 rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primaryDark disabled:opacity-50"
+      [class.bg-rose-600]="peligro()"
+      [class.hover:bg-rose-700]="peligro()"
+      [class.bg-brand-primaryDark]="!peligro()"
+      [class.hover:bg-orange-800]="!peligro()"
+    >
+      {{ ocupado() ? "Procesando…" : textoConfirmar() }}
+    </button>
+  </div>
+</dialog>

@@ -1,14 +1,19 @@
 import { NgOptimizedImage } from "@angular/common";
 import {
+	afterNextRender,
 	ChangeDetectionStrategy,
 	Component,
 	computed,
+	Injector,
 	inject,
 	signal,
 } from "@angular/core";
+
 import {
 	LucideDynamicIcon,
+	LucidePencil as Pencil,
 	LucideShield as Shield,
+	LucideTrash2 as Trash2,
 	LucideUserPlus as UserPlus,
 } from "@lucide/angular";
 import {
@@ -28,7 +33,7 @@ import {
 	PaginadorComponent,
 	TamanosDePagina,
 } from "../../shared/components/paginador/paginador.component";
-import { ConDatos, Usuario } from "../../shared/schemas/api.schema";
+import type { Usuario } from "../../shared/schemas/api.schema";
 import { UsuarioFormComponent } from "./components/usuario-form/usuario-form.component";
 
 @Component({
@@ -47,8 +52,10 @@ export class UsuariosComponent {
 	private readonly api = inject(ApiClient);
 	private readonly queryClient = inject(QueryClient);
 	private readonly auth = inject(AuthService);
+	private readonly injector = inject(Injector);
+	private disparadorFormulario: HTMLButtonElement | null = null;
 
-	protected readonly icons = { UserPlus, Shield };
+	protected readonly icons = { UserPlus, Shield, Pencil, Trash2 };
 	protected readonly roles = ROLES;
 
 	protected readonly pagina = signal(1);
@@ -63,19 +70,17 @@ export class UsuariosComponent {
 	);
 	private readonly miId = computed(() => this.auth.usuario()?.id);
 
+	// ── Formulario (crear / editar)
 	protected readonly formularioAbierto = signal(false);
 	protected readonly aEditar = signal<Usuario | null>(null);
 
+	// ── Eliminar con confirmación 
 	protected readonly aCambiar = signal<Usuario | null>(null);
 	protected readonly errorEstado = signal("");
 
 	protected readonly estadoMutation = injectMutation(() => ({
 		mutationFn: (usuario: Usuario) =>
-			this.api.patch(
-				`/api/usuarios/${encodeURIComponent(usuario.id)}/estado`,
-				{ is_active: !usuario.is_active },
-				ConDatos(Usuario),
-			),
+			this.api.delete(`/api/usuarios/${encodeURIComponent(usuario.id)}`),
 		onSuccess: () => {
 			void this.queryClient.invalidateQueries({
 				queryKey: claves.usuarios.todo,
@@ -85,7 +90,7 @@ export class UsuariosComponent {
 		onError: (error: unknown) => {
 			this.aCambiar.set(null);
 			this.errorEstado.set(
-				mensajeDeError(error, "No se pudo cambiar el estado del usuario."),
+				mensajeDeError(error, "No se pudo eliminar el usuario."),
 			);
 		},
 	}));
@@ -101,12 +106,14 @@ export class UsuariosComponent {
 		return usuario.id === this.miId();
 	}
 
-	protected abrirNuevo() {
+	protected abrirNuevo(evento: MouseEvent) {
+		this.disparadorFormulario = evento.currentTarget as HTMLButtonElement;
 		this.aEditar.set(null);
 		this.formularioAbierto.set(true);
 	}
 
-	protected abrirEdicion(usuario: Usuario) {
+	protected abrirEdicion(usuario: Usuario, evento: MouseEvent) {
+		this.disparadorFormulario = evento.currentTarget as HTMLButtonElement;
 		this.aEditar.set(usuario);
 		this.formularioAbierto.set(true);
 	}
@@ -114,18 +121,19 @@ export class UsuariosComponent {
 	protected cerrarFormulario() {
 		this.formularioAbierto.set(false);
 		this.aEditar.set(null);
+		afterNextRender(() => this.disparadorFormulario?.focus(), {
+			injector: this.injector,
+		});
 	}
 
-	protected pedirCambioDeEstado(usuario: Usuario) {
+	protected pedirEliminacion(usuario: Usuario) {
 		this.errorEstado.set("");
 		this.aCambiar.set(usuario);
 	}
 
 	protected mensajeCambio(usuario: Usuario): string {
 		const nombre = `${usuario.nombres} ${usuario.apellidos}`;
-		return usuario.is_active
-			? `${nombre} no podrá iniciar sesión. Sus movimientos del Kardex se conservan.`
-			: `${nombre} podrá volver a iniciar sesión.`;
+		return `${nombre} dejará de aparecer en Usuarios y no podrá acceder. Su autoría en el historial se conserva. Esta cuenta no podrá reactivarse.`;
 	}
 
 	protected cambiarPorPagina(tamano: number) {
