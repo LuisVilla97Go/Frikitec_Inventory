@@ -1,10 +1,13 @@
+import { HttpErrorResponse } from "@angular/common/http";
 import {
 	ChangeDetectionStrategy,
 	Component,
 	computed,
+	type ElementRef,
 	effect,
 	inject,
 	signal,
+	viewChild,
 } from "@angular/core";
 import {
 	type AbstractControl,
@@ -15,6 +18,7 @@ import {
 } from "@angular/forms";
 import {
 	LucideBuilding as Building,
+	LucideCircleCheck as CircleCheck,
 	LucideDynamicIcon,
 	LucideSave as Save,
 } from "@lucide/angular";
@@ -58,8 +62,12 @@ export class EmpresaComponent {
 	private readonly api = inject(ApiClient);
 	private readonly queryClient = inject(QueryClient);
 	private readonly auth = inject(AuthService);
+	private readonly dialogoExito =
+		viewChild.required<ElementRef<HTMLDialogElement>>("dialogoExito");
+	private readonly botonGuardar =
+		viewChild<ElementRef<HTMLButtonElement>>("botonGuardar");
 
-	protected readonly icons = { Building, Save };
+	protected readonly icons = { Building, Save, CircleCheck };
 	protected readonly empresaQuery = injectQuery(() => datosEmpresa(this.api));
 	protected readonly esAdmin = computed(
 		() => this.auth.usuario()?.is_admin ?? false,
@@ -77,11 +85,19 @@ export class EmpresaComponent {
 		provincia: ["", Validators.maxLength(100)],
 		departamento: ["", Validators.maxLength(100)],
 		telefono: ["", Validators.maxLength(30)],
-		correo: ["", [Validators.email, Validators.maxLength(254)]],
+		correo: [
+			"",
+			[
+				Validators.email,
+				Validators.pattern(/^[^@\s]+@[^@\s]+\.[^@\s]+$/),
+				Validators.maxLength(254),
+			],
+		],
 		web: ["", Validators.maxLength(200)],
 	});
 
 	constructor() {
+		// Lo guardado llena el formulario; quien no es admin solo lo ve
 		effect(() => {
 			const empresa = this.empresaQuery.data();
 			if (empresa) this.form.reset(this.aFormulario(empresa));
@@ -104,20 +120,45 @@ export class EmpresaComponent {
 		onSuccess: (respuesta: { data: Empresa }) => {
 			this.queryClient.setQueryData(claves.empresa, respuesta.data);
 			this.guardado.set(true);
+			this.dialogoExito().nativeElement.showModal();
 		},
 		onError: (err: Error) => {
 			this.error.set(mensajeDeError(err, "No se pudieron guardar los datos"));
+			if (err instanceof HttpErrorResponse && err.status === 422) {
+				this.error.set(
+					"Revisa los datos de la empresa: algún campo no cumple el formato requerido.",
+				);
+			}
 		},
 	}));
 
 	protected guardar() {
 		this.error.set(null);
 		this.guardado.set(false);
+		for (const control of Object.values(this.form.controls)) {
+			const valor = control.value.trim();
+			if (valor !== control.value) control.setValue(valor);
+		}
 		if (this.form.invalid) {
 			this.form.markAllAsTouched();
+			this.error.set(
+				"Revisa los campos marcados antes de guardar los datos de la empresa.",
+			);
 			return;
 		}
 		this.guardarMutation.mutate();
+	}
+
+	protected cerrarExito() {
+		this.dialogoExito().nativeElement.close();
+	}
+
+	protected devolverFoco() {
+		this.botonGuardar()?.nativeElement.focus();
+	}
+
+	protected recorrerFoco(evento: KeyboardEvent) {
+		if (evento.key === "Tab") evento.preventDefault();
 	}
 
 	protected invalido(campo: keyof typeof this.form.controls): boolean {

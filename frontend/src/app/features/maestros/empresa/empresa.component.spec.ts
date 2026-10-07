@@ -65,6 +65,12 @@ describe("EmpresaComponent", () => {
 		fixture = TestBed.createComponent(EmpresaComponent);
 		html = fixture.nativeElement;
 		fixture.detectChanges();
+		const dialogo = html.querySelector("dialog") as HTMLDialogElement;
+		dialogo.showModal = vi.fn(() => dialogo.setAttribute("open", ""));
+		dialogo.close = vi.fn(() => {
+			dialogo.removeAttribute("open");
+			dialogo.dispatchEvent(new Event("close"));
+		});
 		await turno();
 		http.expectOne("/api/empresa").flush({ status: "success", data: ficha });
 		await pintar();
@@ -99,6 +105,14 @@ describe("EmpresaComponent", () => {
 		req.flush({ status: "success", data: FICHA });
 		await pintar();
 		expect(html.textContent).toContain("Datos guardados");
+		const dialogo = html.querySelector("dialog") as HTMLDialogElement;
+		expect(dialogo.open).toBe(true);
+		expect(dialogo.showModal).toHaveBeenCalledOnce();
+		expect(dialogo.textContent).toContain("Empresa guardada con éxito");
+		(html.querySelector("dialog button") as HTMLButtonElement).click();
+		expect(dialogo.open).toBe(false);
+		expect(document.activeElement).toBe(html.querySelector('[type="submit"]'));
+		expect(campo("ruc").value).toBe(FICHA.ruc);
 	});
 
 	it("un RUC con el dígito verificador mal no se envía", async () => {
@@ -111,7 +125,76 @@ describe("EmpresaComponent", () => {
 		fixture.detectChanges();
 		http.expectNone("/api/empresa");
 		expect(html.textContent).toContain("el último debe cuadrar");
+		expect(html.querySelector('[role="alert"]')?.textContent).toContain(
+			"Revisa los campos marcados",
+		);
+		expect((html.querySelector("dialog") as HTMLDialogElement).open).toBe(
+			false,
+		);
 	});
+
+	it("recorta correo y ubigeo antes de validar y enviar", async () => {
+		await montar(true, FICHA);
+		escribir("correo", "  empresa@ejemplo.test  ");
+		escribir("ubigeo", " 150101 ");
+		(html.querySelector("form") as HTMLFormElement).dispatchEvent(
+			new Event("submit"),
+		);
+		await turno();
+		const req = http.expectOne("/api/empresa");
+		expect(req.request.body).toMatchObject({
+			correo: "empresa@ejemplo.test",
+			ubigeo: "150101",
+		});
+		req.flush({
+			status: "success",
+			data: { ...FICHA, correo: "empresa@ejemplo.test", ubigeo: "150101" },
+		});
+		await pintar();
+		expect((html.querySelector("dialog") as HTMLDialogElement).open).toBe(true);
+	});
+
+	it("un correo sin punto en el dominio se explica y no se envía", async () => {
+		await montar(true, FICHA);
+		escribir("correo", "empresa@dominio");
+		(html.querySelector("form") as HTMLFormElement).dispatchEvent(
+			new Event("submit"),
+		);
+		fixture.detectChanges();
+		http.expectNone("/api/empresa");
+		expect(html.textContent).toContain("Revisa el correo");
+		expect(html.querySelector('[role="alert"]')?.textContent).toContain(
+			"Revisa los campos",
+		);
+	});
+
+	it.each([422, 500])(
+		"un rechazo %s conserva la ficha y no anuncia un guardado",
+		async (status) => {
+			await montar(true, FICHA);
+			escribir("nombre_comercial", "Nombre sin guardar");
+			(html.querySelector("form") as HTMLFormElement).dispatchEvent(
+				new Event("submit"),
+			);
+			await turno();
+			http.expectOne("/api/empresa").flush(
+				{
+					message:
+						status === 422 ? "Datos inválidos" : "Error interno del servidor",
+				},
+				{ status, statusText: "Error" },
+			);
+			await pintar();
+			expect(campo("nombre_comercial").value).toBe("Nombre sin guardar");
+			expect(html.querySelector('[role="alert"]')?.textContent).toContain(
+				status === 422 ? "Revisa los datos" : "Error interno del servidor",
+			);
+			expect((html.querySelector("dialog") as HTMLDialogElement).open).toBe(
+				false,
+			);
+			expect(html.textContent).not.toContain("Datos guardados");
+		},
+	);
 
 	it("quien no es admin la ve sin poder cambiarla", async () => {
 		await montar(false, FICHA);

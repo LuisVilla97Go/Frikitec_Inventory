@@ -2,6 +2,7 @@ import { HttpTestingController } from "@angular/common/http/testing";
 import { type ComponentFixture, TestBed } from "@angular/core/testing";
 
 import { proveedoresDeTest } from "../../../../../testing/proveedores-test";
+import { AuthService } from "../../../../core/auth/auth.service";
 import type { Usuario } from "../../../../shared/schemas/api.schema";
 import { UsuarioFormComponent } from "./usuario-form.component";
 
@@ -55,7 +56,7 @@ describe("UsuarioFormComponent", () => {
 		escribir("email", "luis");
 		enviar();
 		await turno();
-		http.expectNone("/api/usuarios");
+		http.expectNone("/api/usuarios"); // sin contraseña no se envía
 
 		escribir("password", "clave-segura-1");
 		enviar();
@@ -89,9 +90,107 @@ describe("UsuarioFormComponent", () => {
 			email: "ana@ejemplo.test",
 			rol: "TRABAJADOR",
 			cargo: null,
+			is_active: true,
 		});
 		req.flush({ data: ANA });
 		await turno();
+	});
+
+	it("cambiar el interruptor espera Guardar y confirmar; cancelar conserva la ficha", async () => {
+		fixture.componentRef.setInput("usuario", ANA);
+		fixture.detectChanges();
+		const interruptor = fixture.nativeElement.querySelector(
+			'[role="switch"]',
+		) as HTMLInputElement;
+		expect(interruptor.checked).toBe(true);
+		interruptor.click();
+		escribir("apellidos", "Gómez");
+		fixture.detectChanges();
+		await turno();
+		http.expectNone("/api/usuarios/ana");
+		enviar();
+		fixture.detectChanges();
+		expect(fixture.nativeElement.textContent).toContain("¿Desactivar usuario?");
+		const dialogo = fixture.nativeElement.querySelector(
+			"app-dialogo-confirmacion",
+		) as HTMLElement;
+		(dialogo.querySelector("button") as HTMLButtonElement).click();
+		fixture.detectChanges();
+		http.expectNone("/api/usuarios/ana");
+		expect(interruptor.checked).toBe(false);
+		enviar();
+		fixture.detectChanges();
+		const confirmar = fixture.nativeElement.querySelector(
+			"app-dialogo-confirmacion button:last-child",
+		) as HTMLButtonElement;
+		confirmar.click();
+		confirmar.click();
+		await turno();
+		const req = http.expectOne("/api/usuarios/ana");
+		expect(req.request.method).toBe("PUT");
+		expect(req.request.body).toMatchObject({
+			apellidos: "Gómez",
+			is_active: false,
+		});
+		expect(req.request.body).not.toHaveProperty("password");
+		req.flush(
+			{ message: "No tienes permiso" },
+			{ status: 403, statusText: "Forbidden" },
+		);
+		for (let i = 0; i < 5; i++) await turno();
+		fixture.detectChanges();
+		expect(
+			fixture.nativeElement.querySelector('[role="alert"]')?.textContent,
+		).toContain("No tienes permiso");
+		expect(interruptor.checked).toBe(false);
+		expect(
+			(fixture.nativeElement.querySelector("#apellidos") as HTMLInputElement)
+				.value,
+		).toBe("Gómez");
+	});
+
+	it("una cuenta inactiva se reactiva al guardar y confirmar", async () => {
+		fixture.componentRef.setInput("usuario", { ...ANA, is_active: false });
+		fixture.detectChanges();
+		(
+			fixture.nativeElement.querySelector('[role="switch"]') as HTMLInputElement
+		).click();
+		enviar();
+		fixture.detectChanges();
+		expect(fixture.nativeElement.textContent).toContain("¿Reactivar usuario?");
+		(
+			fixture.nativeElement.querySelector(
+				"app-dialogo-confirmacion button:last-child",
+			) as HTMLButtonElement
+		).click();
+		await turno();
+		const req = http.expectOne("/api/usuarios/ana");
+		expect(req.request.body.is_active).toBe(true);
+		req.flush({ data: ANA });
+		await turno();
+	});
+
+	it("la cuenta propia tiene el interruptor deshabilitado", async () => {
+		const sesion = TestBed.inject(AuthService).iniciarSesion({
+			email: ANA.email,
+			password: "x",
+		});
+		http
+			.expectOne("/api/auth/login")
+			.flush({ user: { ...ANA, nombre: "Ana" } });
+		await sesion;
+		fixture.componentRef.setInput("usuario", ANA);
+		fixture.detectChanges();
+		expect(
+			(
+				fixture.nativeElement.querySelector(
+					'[role="switch"]',
+				) as HTMLInputElement
+			).disabled,
+		).toBe(true);
+		expect(fixture.nativeElement.textContent).toContain(
+			"No puedes desactivar tu propia cuenta",
+		);
 	});
 
 	it("quien no es SUPERADMIN no ve esa opción de rol", () => {
