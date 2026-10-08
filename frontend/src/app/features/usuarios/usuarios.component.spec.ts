@@ -60,7 +60,7 @@ describe("UsuariosComponent", () => {
 
 	async function cargarLista() {
 		fixture.detectChanges();
-		await turno();
+		await turno(); // TanStack lanza la petición en un macrotask
 		http.expectOne((r) => r.url === "/api/usuarios").flush(PAGINA);
 		await pintar();
 	}
@@ -70,7 +70,9 @@ describe("UsuariosComponent", () => {
 			fixture.nativeElement.querySelectorAll(
 				"button",
 			) as NodeListOf<HTMLButtonElement>,
-		).filter((b) => b.textContent?.trim() === texto);
+		).filter(
+			(b) => (b.getAttribute("aria-label") ?? b.textContent?.trim()) === texto,
+		);
 	}
 
 	beforeEach(async () => {
@@ -93,9 +95,22 @@ describe("UsuariosComponent", () => {
 		expect(texto).toContain("Trabajador");
 		expect(texto).toContain("(tú)");
 		expect(botones("Nuevo usuario").length).toBe(1);
+		// Editar: yo y ana y baja (no jefe, que es SUPERADMIN)
 		expect(botones("Editar").length).toBe(3);
-		expect(botones("Activo").length).toBe(1);
-		expect(botones("Inactivo").length).toBe(1);
+		// El estado es informativo; eliminar: ana y baja (ni yo ni jefe).
+		expect(botones("Activo").length).toBe(0);
+		expect(botones("Inactivo").length).toBe(0);
+		expect(botones("Eliminar").length).toBe(2);
+		expect(botones("Desactivar").length).toBe(0);
+		expect(botones("Reactivar").length).toBe(0);
+		for (const accion of ["Editar", "Eliminar"]) {
+			for (const boton of botones(accion)) {
+				expect(boton.textContent?.trim()).toBe("");
+				expect(boton.getAttribute("aria-label")).toBe(accion);
+				expect(boton.title).toBe(accion);
+				expect(boton.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+			}
+		}
 	});
 
 	it("un TRABAJADOR solo ve la lista", async () => {
@@ -106,25 +121,73 @@ describe("UsuariosComponent", () => {
 		expect(botones("Nuevo usuario").length).toBe(0);
 		expect(botones("Editar").length).toBe(0);
 		expect(botones("Activo").length).toBe(0);
+		expect(botones("Desactivar").length).toBe(0);
+		expect(botones("Reactivar").length).toBe(0);
+		expect(botones("Eliminar").length).toBe(0);
 	});
 
-	it("desactivar pide confirmación y manda is_active=false", async () => {
+	it("eliminar pide confirmación y manda DELETE sin cuerpo", async () => {
 		await iniciarSesionComo(YO);
 		fixture = TestBed.createComponent(UsuariosComponent);
 		await cargarLista();
 
-		botones("Activo")[0].click();
+		botones("Eliminar")[0].click();
 		fixture.detectChanges();
-		expect(fixture.nativeElement.textContent).toContain("¿Desactivar usuario?");
+		expect(fixture.nativeElement.textContent).toContain("¿Eliminar usuario?");
 
-		botones("Desactivar")[0].click();
+		botones("Eliminar")
+			.find((b) => b.closest("app-dialogo-confirmacion"))
+			?.click();
 		await turno();
-		const req = http.expectOne("/api/usuarios/ana/estado");
-		expect(req.request.method).toBe("PATCH");
-		expect(req.request.body).toEqual({ is_active: false });
-		req.flush({ data: fila("ana", "TRABAJADOR", false) });
+		const req = http.expectOne("/api/usuarios/ana");
+		expect(req.request.method).toBe("DELETE");
+		expect(req.request.body).toBeNull();
+		req.flush(null, { status: 204, statusText: "No Content" });
 		await pintar();
+		// Tras el cambio se vuelve a pedir la lista
 		http.expectOne((r) => r.url === "/api/usuarios").flush(PAGINA);
 		await pintar();
+	});
+
+	it("la papelera explica la conservación del historial y cancelar no elimina", async () => {
+		await iniciarSesionComo(YO);
+		fixture = TestBed.createComponent(UsuariosComponent);
+		await cargarLista();
+		botones("Eliminar")[0].click();
+		fixture.detectChanges();
+		expect(fixture.nativeElement.textContent).toContain(
+			"Su autoría en el historial se conserva",
+		);
+		botones("Cancelar")[0].click();
+		fixture.detectChanges();
+		expect(
+			fixture.nativeElement.querySelector("app-dialogo-confirmacion"),
+		).toBeNull();
+		http.expectNone("/api/usuarios/ana");
+	});
+
+	it("eliminar una cuenta inactiva comunica un rechazo de permisos sin retirarla", async () => {
+		await iniciarSesionComo(YO);
+		fixture = TestBed.createComponent(UsuariosComponent);
+		await cargarLista();
+		botones("Eliminar")[1].click();
+		fixture.detectChanges();
+		expect(fixture.nativeElement.textContent).toContain("¿Eliminar usuario?");
+		botones("Eliminar")
+			.find((b) => b.closest("app-dialogo-confirmacion"))
+			?.click();
+		await turno();
+		const req = http.expectOne("/api/usuarios/baja");
+		expect(req.request.method).toBe("DELETE");
+		expect(req.request.body).toBeNull();
+		req.flush(
+			{ message: "No tienes permiso para cambiar este usuario" },
+			{ status: 403, statusText: "Forbidden" },
+		);
+		await pintar();
+		expect(
+			fixture.nativeElement.querySelector('[role="alert"]')?.textContent,
+		).toContain("No tienes permiso");
+		http.expectNone((r) => r.url === "/api/usuarios");
 	});
 });

@@ -14,7 +14,7 @@
     @if (esAdmin()) {
       <button
         type="button"
-        (click)="abrirNuevo()"
+        (click)="abrirNuevo($event)"
         class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-primaryDark hover:bg-orange-800 transition-colors"
       >
         <svg
@@ -36,6 +36,7 @@
     </div>
   }
 
+  <!-- Tabla -->
   <div
     class="bg-white rounded-lg shadow-sm border border-brand-border overflow-hidden"
   >
@@ -171,35 +172,22 @@
                   {{ usuario.cargo || "—" }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
-                  @if (puedeGestionar(usuario) && !esYo(usuario)) {
-                    <button
-                      type="button"
-                      (click)="pedirCambioDeEstado(usuario)"
-                      [title]="usuario.is_active ? 'Desactivar' : 'Reactivar'"
-                      class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border transition-colors hover:shadow-sm"
-                      [class.bg-emerald-50]="usuario.is_active"
-                      [class.text-emerald-700]="usuario.is_active"
-                      [class.border-emerald-200]="usuario.is_active"
-                      [class.bg-rose-50]="!usuario.is_active"
-                      [class.text-rose-700]="!usuario.is_active"
-                      [class.border-rose-200]="!usuario.is_active"
-                    >
-                      <span
-                        class="w-2 h-2 rounded-full mr-1.5"
-                        [class.bg-emerald-500]="usuario.is_active"
-                        [class.bg-rose-500]="!usuario.is_active"
-                      ></span>
-                      {{ usuario.is_active ? "Activo" : "Inactivo" }}
-                    </button>
-                  } @else {
+                  <span
+                    class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border"
+                    [class.bg-emerald-50]="usuario.is_active"
+                    [class.text-emerald-700]="usuario.is_active"
+                    [class.border-emerald-200]="usuario.is_active"
+                    [class.bg-rose-50]="!usuario.is_active"
+                    [class.text-rose-700]="!usuario.is_active"
+                    [class.border-rose-200]="!usuario.is_active"
+                  >
                     <span
-                      class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
-                      [class.text-emerald-700]="usuario.is_active"
-                      [class.text-rose-700]="!usuario.is_active"
-                    >
-                      {{ usuario.is_active ? "Activo" : "Inactivo" }}
-                    </span>
-                  }
+                      class="w-2 h-2 rounded-full mr-1.5"
+                      [class.bg-emerald-500]="usuario.is_active"
+                      [class.bg-rose-500]="!usuario.is_active"
+                    ></span>
+                    {{ usuario.is_active ? "Activo" : "Inactivo" }}
+                  </span>
                 </td>
                 <td
                   class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
@@ -207,11 +195,32 @@
                   @if (puedeGestionar(usuario)) {
                     <button
                       type="button"
-                      (click)="abrirEdicion(usuario)"
-                      class="text-brand-primaryDark hover:text-orange-800"
+                      (click)="abrirEdicion(usuario, $event)"
+                      aria-label="Editar"
+                      title="Editar"
+                      class="inline-flex h-11 w-11 items-center justify-center rounded-lg text-brand-primaryDark hover:bg-orange-50 hover:text-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primaryDark focus-visible:ring-offset-2"
                     >
-                      Editar
+                      <svg
+                        aria-hidden="true"
+                        [lucideIcon]="icons.Pencil"
+                        class="h-5 w-5"
+                      ></svg>
                     </button>
+                    @if (!esYo(usuario)) {
+                      <button
+                        type="button"
+                        (click)="pedirEliminacion(usuario)"
+                        aria-label="Eliminar"
+                        title="Eliminar"
+                        class="ml-1 inline-flex h-11 w-11 items-center justify-center rounded-lg text-rose-700 hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primaryDark focus-visible:ring-offset-2"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          [lucideIcon]="icons.Trash2"
+                          class="h-5 w-5"
+                        ></svg>
+                      </button>
+                    }
                   }
                 </td>
               </tr>
@@ -247,11 +256,10 @@
 
 @if (aCambiar(); as usuario) {
   <app-dialogo-confirmacion
-    [titulo]="
-      usuario.is_active ? '¿Desactivar usuario?' : '¿Reactivar usuario?'
-    "
+    titulo="¿Eliminar usuario?"
     [mensaje]="mensajeCambio(usuario)"
-    [textoConfirmar]="usuario.is_active ? 'Desactivar' : 'Reactivar'"
+    textoConfirmar="Eliminar"
+    accion="eliminar"
     [ocupado]="estadoMutation.isPending()"
     (confirmar)="estadoMutation.mutate(usuario)"
     (cancelar)="aCambiar.set(null)"
