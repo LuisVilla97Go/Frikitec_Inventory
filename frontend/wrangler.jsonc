@@ -1,5 +1,5 @@
 {
-	"name": "stockmaster",
+	"name": "inventory",
 	"compatibility_date": "2026-10-01",
 	"main": "./src/worker/proxy-api.ts",
 	"assets": {
@@ -8,6 +8,7 @@
 		"run_worker_first": ["/api/*"]
 	},
 	"vars": {
+
 		"BACKEND_URL": "https://stockmaster-api-ndrw.onrender.com"
 	}
 }
